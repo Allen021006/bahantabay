@@ -5,7 +5,7 @@
 
   New here? Read START-HERE.md first. Delete this comment when you are done.
 -->
-
+Bahantabay - Flutter final project.
 # App Name
 
 > One sentence: what this app does, and who it is for.
