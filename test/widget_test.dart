@@ -7,21 +7,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:final_project/main.dart';
+import 'package:bahantabay/app/bahantabay_app.dart';
+import 'package:bahantabay/core/theme/app_colors.dart';
 
 void main() {
-  testWidgets('home screen shows its title and counts taps', (tester) async {
-    // Build the app. Note we build MyApp directly, not the DevicePreview
-    // wrapper, because a test does not need the phone frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('app opens the Sign In and Guest Entry screen', (tester) async {
+    await tester.pumpWidget(const BahantabayApp());
 
-    expect(find.text('It works'), findsOneWidget);
-    expect(find.text('Taps: 0'), findsOneWidget);
+    expect(find.text('Bahantabay'), findsOneWidget);
+    expect(find.text('Continue as Guest'), findsOneWidget);
+  });
 
-    // Tap the button, then let the widget rebuild.
-    await tester.tap(find.byType(FilledButton));
-    await tester.pump();
+  testWidgets('app uses the approved Bahantabay theme', (tester) async {
+    await tester.pumpWidget(const BahantabayApp());
 
-    expect(find.text('Taps: 1'), findsOneWidget);
+    final context = tester.element(find.byType(Scaffold));
+    final theme = Theme.of(context);
+
+    expect(theme.useMaterial3, isTrue);
+    expect(theme.colorScheme.primary, AppColors.floodBlue);
+    expect(theme.scaffoldBackgroundColor, AppColors.scaffoldBackground);
+    expect(theme.colorScheme.error, AppColors.floodRed);
   });
 }
