@@ -20,7 +20,7 @@ The screenshots below show the current approved Bahantabay interface and mockup 
 
 | Sign In / Guest Entry | Home - List View | Home - Map View |
 | --- | --- | --- |
-| ![Sign In / Guest Entry](docs/assets/SignIn%20_%20Guest%20Entry.png) | ![Home - List View](docs/assets/Home%20-%20List%20View.png) | ![Home - Map View](docs/assets/Home%20-%20Map%20View.png) |
+| ![Sign In / Guest Entry](docs/assets/Sign%20In%20_%20Guest%20Entry.png) | ![Home - List View](docs/assets/Home%20-%20List%20View.png) | ![Home - Map View](docs/assets/Home%20-%20Map%20View.png) |
 
 Additional mockup screens are available under `docs/assets/` for Add Route, Route Details, and Report Flood.
 
