@@ -1,401 +1,344 @@
-BAHANTABAY
-High-Level Mockup
-Community-Based Flood Monitoring and Route Warning App
-The following mockups present the five MVP screens established in the Bahantabay proposal
-and preliminary wireframes, now rendered in full colour using the finalized M7A3 design
-system. The layouts remain based on the existing wireframes; this mockup stage applies the
-actual typography, spacing, colours, components, icons, and realistic example content that
-will guide the Flutter implementation.
-All mockups use approximately 390 × 844 phone proportions. Home is shown in both List
-View and Map View, but these are two visual states of the same Home screen rather than
-separate MVP screens. This preserves the five-screen structure defined in M7A1.
-Main user journey
-Sign In / Guest Entry → Home
-From Home, the user can open Add Route, Route Details, or Report Flood. Route Details can
-also lead directly to Report Flood.
+# Mockup and wireframes
+
+The visual plan for Bahantabay. The wireframes established what goes where and how users move through the application, while the mockups show the finalized visual direction using the approved design system.
+
+Bahantabay contains exactly five MVP screens:
+
 1. Sign In / Guest Entry
-Prelim Requirement
-3
-HOLY ANGEL UNIVERSITY
-School of Computing
-6ADET
-Figure 1. Sign In / Guest Entry
-Prelim Requirement
-4
-HOLY ANGEL UNIVERSITY
-School of Computing
-6ADET
-What the user does here:
-The user enters an email and password to sign in, continues as a guest for read-only access,
-or switches the same authentication screen into sign-up mode if they do not yet have an
-account.
-Where the tappable elements go:
-Sign In → Home
-Continue as Guest → Home (read-only session)
-Sign Up → Sign-up mode on the same Sign In / Guest Entry screen
-The Sign In / Guest Entry mockup uses Bahantabay's Flood Blue as a full-screen branded
-hero treatment before the user enters the functional Mist Grey screens. This auth-specific use
-of Flood Blue is documented in the finalized M7A3 design system.
 2. Home
-Prelim Requirement
-5
-HOLY ANGEL UNIVERSITY
-School of Computing
-6ADET
-Figure 2A. Home — List View
-Figure 2B. Home — Map View
-Figures 2A and 2B represent two states of the same Home screen, controlled by the List ↔
-Map toggle.
-Home supports two presentation states, switched by a centered segmented List ↔ Map
-control positioned directly below the app bar. The app bar itself contains Bahantabay
-branding on the left and the profile/account icon on the right. Both List and Map states
-belong to the same Home screen and share the same navigation and account controls.
-Prelim Requirement
-6
-HOLY ANGEL UNIVERSITY
-School of Computing
-6ADET
-List View
-● Mist Grey application background.
-● Saved routes displayed as RouteCards with status badge, leading status-color dot, and
-distance/time.
-● Nearby reports displayed as FloodReportEntry rows.
-● Optimized for quickly scanning several routes and reports.
-Map View
-● Full Flood Blue map canvas for an immersive geographic presentation.
-● Simplified two-point route representation shown as a straight/dashed line between
-saved start and destination points.
-● Flood-report markers displayed relative to the route.
-● Floating white warning summary card for the selected route, with a View action
-leading to Route Details.
-● Report Flood floating action remains available.
-● Optimized for understanding geographic context rather than scanning multiple list
-items.
-What the user does here:
-The user checks saved routes and current flood conditions, scans nearby flood reports,
-switches between List and Map presentation, opens a saved route, creates a new route, starts
-a flood report, or uses the profile icon to access account actions.
-Where the tappable elements go:
-Profile icon → Account menu overlay
-Log out → Sign In / Guest Entry
-Switch account → Sign In / Guest Entry
-Sign in / Create account (guest mode) → Sign In / Guest Entry
-Prelim Requirement
-7
-HOLY ANGEL UNIVERSITY
-School of Computing
-6ADET
-List ↔ Map → Changes Home presentation only
-RouteCard → Route Details
-+ Add route → Add Route
-Report Flood → Report Flood
-The app bar is reserved for global application controls: Bahantabay branding on the left and
-account access on the right. The centered List ↔ Map control sits directly below the app bar
-because it changes how the Home content itself is presented rather than performing a global
-application action.
-List View uses the default Mist Grey application background and prioritizes fast scanning of
-saved routes and nearby reports.
-Map View uses a full Flood Blue map treatment to create a more immersive geographic
-presentation. It still follows the simplified MVP route model: a saved route is represented
-using its selected start and destination points rather than a road-following Directions API
-path.
 3. Add Route
-Prelim Requirement
-8
-HOLY ANGEL UNIVERSITY
-School of Computing
-6ADET
-Figure 3. Add Route
-Prelim Requirement
-9
-HOLY ANGEL UNIVERSITY
-School of Computing
-6ADET
-What the user does here:
-The user gives the route a name, taps a starting point and destination on the map, confirms
-both points, and saves the route.
-Where the tappable elements go:
-Back arrow → Home without saving
-Map → Selects start and destination coordinates
-Save route → Home with the route saved
-The mockup follows Bahantabay's simplified MVP route model: the route is represented by
-the selected start and destination coordinates rather than a road-following Directions API
-path, matching the revised proposal. M7A1 defines Add Route as a two-point map-selection
-workflow.
 4. Route Details
-Prelim Requirement
-10
-HOLY ANGEL UNIVERSITY
-School of Computing
-6ADET
-Figure 4. Route Details
-Prelim Requirement
-11
-HOLY ANGEL UNIVERSITY
-School of Computing
-6ADET
-What the user does here:
-The user checks the selected route's current status, views the simplified route and nearby
-flood-report marker on the map, reads the report affecting the route, and can submit another
-flood report if needed.
-Where the tappable elements go:
-Back arrow → Home
-Report Flood → Report Flood
-Route Details is the screen where Bahantabay's core route-warning concept becomes most
-visible: the saved route, map information, nearby community report, and resulting
-WARNING status are presented together. The amber RouteWarningBanner explains why the
-route is currently flagged before the user reaches the detailed flood-report entry.
 5. Report Flood
-Prelim Requirement
-12
-HOLY ANGEL UNIVERSITY
-School of Computing
-6ADET
-Figure 5. Report Flood
-Prelim Requirement
-13
-HOLY ANGEL UNIVERSITY
-School of Computing
-6ADET
-What the user does here:
-The user selects or confirms the flood location, chooses the flood depth, marks the road as
-passable or not passable, optionally enters notes, and submits the community report.
-Where the tappable elements go:
-Back arrow → Previous screen (Home or Route Details)
-Map → Selects report location
-Flood depth → Opens depth options
-Passable / Not passable → Selects road status
-Submit Report → Home with the report saved
-The Report Flood screen remains fully usable without GPS because location can always be
-selected manually on the map, matching the fallback planned in the proposal. M7A1
-specifies location selection, flood depth, road status, optional notes, and a manual map-based
-fallback when device location is unavailable.
-Bahantabay - User Journey
-The five MVP screens below are arranged to show Bahantabay’s main user journey. Home
-List View and Home Map View are two states of the same Home screen, not separate
-screens.
-Prelim Requirement
-14
-HOLY ANGEL UNIVERSITY
-School of Computing
-6ADET
-Account flow: Home → Profile icon → Account menu → Sign In / Guest Entry (after Log
-out, Switch account, or guest Sign in/Create account).
-The Home List ↔ Map toggle changes only how Home presents its information and does not
-create a separate screen. The account menu is also an overlay rather than a separate screen.
-Bahantabay therefore remains a five-screen MVP.
-From
-Tappable element
-Leads to / Result
+
+Home is shown in both List View and Map View, but these are two presentation states of the same Home screen rather than separate screens. The profile/account menu is also an overlay rather than a separate screen. This preserves the five-screen structure defined in the project proposal.
+
+All mockups use approximately 390 × 844 phone proportions.
+
+## Mockup
+
+The high-level mockups apply Bahantabay's finalized typography, spacing, colors, reusable components, icons, and realistic example content to the layouts established by the earlier wireframes.
+
+### Sign In / Guest Entry
+
+![Sign In / Guest Entry](assets/Sign%20In%20_%20Guest%20Entry.png)
+
+The Sign In / Guest Entry screen uses Flood Blue as a full-screen branded hero treatment. It serves as the application's single authentication entry point for signing in, creating an account, or continuing as a guest.
+
+Sign Up is handled as another mode of the same authentication screen rather than as an additional screen.
+
+### Home — List View
+
+![Home - List View](assets/Home%20-%20List%20View.png)
+
+Home List View uses the Mist Grey application background and prioritizes quick scanning of saved routes and nearby flood reports.
+
+Saved routes are displayed using RouteCards with a StatusBadge and a small leading status-color dot derived from the same route status. Nearby community reports are displayed below the saved routes.
+
+### Home — Map View
+
+![Home - Map View](assets/Home%20-%20Map%20View.png)
+
+Home Map View is the second presentation state of the same Home screen.
+
+It uses an immersive Flood Blue map treatment and displays the simplified route representation, route endpoints, flood-report markers, and warning information in geographic context.
+
+The List ↔ Map control changes only the presentation of Home and does not navigate to another screen.
+
+### Add Route
+
+![Add Route](assets/Add%20Route.png)
+
+The Add Route mockup contains the route-name input and an embedded map for selecting a starting point and destination.
+
+It follows Bahantabay's simplified MVP route model: the saved route is represented using two selected geographic points rather than a road-following path generated by a Directions API.
+
+### Route Details
+
+![Route Details](assets/Route%20Details.png)
+
+The Route Details mockup brings together the selected saved route, its current status, the simplified route visualization, nearby flood reports, and a route-level warning.
+
+The amber RouteWarningBanner explains why a route has been flagged before the user reviews the individual nearby flood reports.
+
+### Report Flood
+
+![Report Flood](assets/Report%20Flood.png)
+
+The Report Flood mockup contains location selection, flood-depth selection, road-status selection, optional notes, and report submission.
+
+The screen remains usable without GPS because the flood location can always be selected manually using the map.
+
+## Wireframes
+
+The earlier wireframes established the five-screen structure and the navigation flow that the final mockups follow.
+
+The overall screen flow is:
+
+**Sign In / Guest Entry → Home**
+
+From Home, the user can navigate to:
+
+- Add Route
+- Route Details
+- Report Flood
+
+Route Details can also lead directly to Report Flood.
+
+The Home screen contains both List View and Map View. Switching between them changes only how the same Home information is presented.
+
+The profile icon on Home opens an account menu overlay. Because the account menu is an overlay rather than a destination screen, it does not increase the MVP screen count.
+
+The authentication screen similarly supports both Sign In and Sign Up modes without introducing a separate Sign Up screen.
+
+### Main user journey
+
+```text
 Sign In / Guest Entry
-Sign In
+        |
+        | Sign In / Continue as Guest
+        v
+       Home
+      /  |  \
+     /   |   \
+    v    v    v
+Add    Route   Report
+Route  Details Flood
+         |
+         | Report Flood
+         v
+      Report Flood
+```
+
+### Account flow
+
+```text
 Home
-Sign In / Guest Entry
-Continue as Guest
-Home — read-only session
-Sign In / Guest Entry
-Sign Up
-Sign-up
-mode
-on
-the
-same
-authentication screen
-Home
-Profile icon
-Opens account menu overlay
-Account menu
-Log out
-Sign In / Guest Entry
-Account menu
-Switch account
-Sign In / Guest Entry
-Account menu
-Sign in / Create account (guest
-mode)
-Sign In / Guest Entry
-Prelim Requirement
-15
-HOLY ANGEL UNIVERSITY
-School of Computing
-6ADET
-Home
-List ↔ Map toggle
-Switches Home presentation only;
-remains on Home
-Home
-RouteCard
-Route Details
-Home
-+ Add route
-Add Route
-Home
-Report Flood
-Report Flood
-Add Route
-Back arrow
-Home — changes discarded
-Add Route
-Save route
-Home — route saved
-Route Details
-Back arrow
-Home
-Route Details
-Report Flood
-Report Flood
-Report Flood
-Back arrow
-Previous screen — Home or Route
-Details
-Report Flood
-Map
-Selects report location
-Report Flood
-Flood depth
-Opens flood-depth options
-Report Flood
-Passable / Not passable
-Selects road status
-Report Flood
-Submit Report
-Home — report submitted
-What Changed, and Why
-The wireframes themselves remain unchanged. Painting them into full-colour mockups
-revealed a small number of visual-system details that needed to be formally documented in
-M7A3 so that the mockups and later Flutter implementation use the same rules.
-Screen or
-element
-The wireframe /
-earlier design
-system assumed
-The mockup
-shows
-What changed, and why
-Prelim Requirement
-16
-HOLY ANGEL UNIVERSITY
-School of Computing
-6ADET
-Home
-navigation
-and
-view
-controls
-The
-original
-Home
-treatment
-placed
-the
-List/Map
-control
-in the app bar and
-did not define a
-clear way to log
-out,
-switch
-accounts, or leave
-guest mode.
-The final Home
-app bar contains
-Bahantabay
-branding
-and
-a
-profile icon, while
-the
-List/Map
-segmented control
-is centered below
-the app bar. The
-profile icon opens
-account
-actions
-without
-leaving
-Home.
-Keep this hierarchy in the Flutter
-implementation. Account actions
-will use a Material overlay rather
-than a new screen, preserving
-the
-five-screen
-MVP
-while
-providing
-a
-complete
-authentication exit path.
-Home Map
-presentation
-The
-map
-was
-treated as another
-light
-embedded
-map
-surface
-similar to the map
-areas
-on
-the
-form/detail
-screens.
-Home Map View
-uses an immersive
-Flood Blue map
-canvas
-while
-keeping the same
-two-point
-route
-model
-and
-warning
-information.
-Update M7A3 to distinguish the
-full-screen Home Map treatment
-from the lighter Alice Blue
-embedded map panels. No new
-color is needed because Home
-Map reuses Flood Blue.
-Route
-Details
-warning
-message
-The
-earlier
-component system
-did not formally
-define
-a
-route-level
-warning banner.
-A distinct amber
-warning message
-appears
-between
-the
-map
-and
-nearby
-flood
-reports.
-Keep
-RouteWarningBanner
-documented in M7A3 so it
-becomes a buildable component
-rather
-than
-undocumented
-one-off UI.
-Prelim Requirement
-17
-HOLY ANGEL UNIVERSITY
-School of Computing
-6ADET
-Additional RouteCard refinement: the mockup retains both the text-labelled StatusBadge and the
-small leading status-colour dot. M7A3 now documents the dot as a secondary visual cue derived from
-the same RouteStatus; the badge remains the primary readable status indicator.
+ |
+ | Profile icon
+ v
+Account menu overlay
+ |
+ +-- Log out --------------------> Sign In / Guest Entry
+ |
+ +-- Switch account -------------> Sign In / Guest Entry
+ |
+ +-- Sign in / Create account ---> Sign In / Guest Entry
+     (guest mode)
+```
+
+The List ↔ Map toggle remains inside Home:
+
+```text
+Home — List View <----> Home — Map View
+```
+
+This is a presentation-state change rather than navigation between two different screens.
+
+## Screens
+
+### 1. Sign In / Guest Entry
+
+**What is on it:**
+
+- Bahantabay branding
+- email field
+- password field
+- Sign In action
+- Continue as Guest action
+- Sign Up option
+
+**What the user does:**
+
+The user enters an email and password to sign in, continues as a guest for read-only access, or switches the same authentication screen into Sign Up mode when creating an account.
+
+**Where each action goes:**
+
+| Action | Result |
+| --- | --- |
+| Sign In | Home |
+| Continue as Guest | Home — guest/read-only session |
+| Sign Up | Sign Up mode on the same Sign In / Guest Entry screen |
+
+The screen uses Bahantabay's Flood Blue as a full-screen branded treatment before the user enters the functional application screens.
+
+### 2. Home
+
+Home has two presentation states controlled by the centered List ↔ Map segmented control positioned directly below the app bar.
+
+The app bar contains Bahantabay branding on the left and profile/account access on the right.
+
+#### List View
+
+**What is on it:**
+
+- Mist Grey application background
+- Bahantabay app bar
+- profile/account icon
+- List ↔ Map control
+- saved RouteCards
+- route status badges
+- status-color indicators
+- nearby FloodReportEntry rows
+- Add Route action
+- Report Flood action
+
+List View is optimized for quickly scanning several saved routes and nearby flood reports.
+
+#### Map View
+
+**What is on it:**
+
+- Bahantabay app bar
+- profile/account icon
+- List ↔ Map control
+- immersive Flood Blue map treatment
+- selected route endpoints
+- straight/dashed simplified route
+- flood-report markers
+- floating route warning summary
+- View action for Route Details
+- Report Flood floating action
+
+Map View is optimized for understanding the geographic relationship between a route and nearby flood reports.
+
+The route remains a simplified two-point representation rather than a road-following Directions API path.
+
+**What the user does:**
+
+The user checks saved routes and flood conditions, reviews nearby reports, switches between List and Map presentation, opens a saved route, creates a new route, submits a flood report, or accesses account actions.
+
+**Where each action goes:**
+
+| Action | Result |
+| --- | --- |
+| Profile icon | Opens account menu overlay |
+| Log out | Sign In / Guest Entry |
+| Switch account | Sign In / Guest Entry |
+| Sign in / Create account in guest mode | Sign In / Guest Entry |
+| List ↔ Map | Changes Home presentation only |
+| RouteCard | Route Details |
+| Add Route | Add Route |
+| Report Flood | Report Flood |
+| View on selected route warning | Route Details |
+
+The List ↔ Map control is positioned below the app bar because it changes how Home content is presented rather than performing a global application action.
+
+### 3. Add Route
+
+**What is on it:**
+
+- back arrow
+- route-name field
+- embedded map
+- start-point marker
+- destination-point marker
+- Save Route action
+
+**What the user does:**
+
+The user gives the route a name, selects a starting point and destination directly on the map, confirms both points, and saves the route.
+
+The MVP stores the selected start and destination coordinates rather than requesting road-following geometry from a routing API.
+
+**Where each action goes:**
+
+| Action | Result |
+| --- | --- |
+| Back arrow | Home without saving |
+| Map tap | Selects start and destination coordinates |
+| Save Route | Home with the route saved |
+
+### 4. Route Details
+
+**What is on it:**
+
+- back arrow
+- route name
+- route status
+- StatusBadge
+- embedded map
+- simplified route line
+- nearby flood-report markers
+- RouteWarningBanner when applicable
+- nearby flood reports
+- Report Flood action
+
+**What the user does:**
+
+The user checks the selected route's current status, views its simplified geographic representation, sees nearby flood reports that may affect it, and can submit another flood report if needed.
+
+This screen makes Bahantabay's main route-warning concept visible by presenting the saved route, community flood information, and resulting route status together.
+
+**Where each action goes:**
+
+| Action | Result |
+| --- | --- |
+| Back arrow | Home |
+| Report Flood | Report Flood |
+
+### 5. Report Flood
+
+**What is on it:**
+
+- back arrow
+- embedded map
+- selected flood location
+- flood-depth selection
+- road-status selection
+- optional notes field
+- Submit Report action
+
+**What the user does:**
+
+The user selects or confirms the flood location, chooses the flood depth, marks the road condition, optionally enters notes, and submits the community report.
+
+Manual map selection remains available so the reporting workflow can still be completed when GPS permission is denied, location services are unavailable, or browser geolocation cannot be used.
+
+**Where each action goes:**
+
+| Action | Result |
+| --- | --- |
+| Back arrow | Previous screen — Home or Route Details |
+| Map tap | Selects report location |
+| Flood depth | Opens flood-depth options |
+| Road-status control | Selects road condition |
+| Submit Report | Home with the report submitted |
+
+### Complete navigation summary
+
+| From | Tappable element | Leads to / Result |
+| --- | --- | --- |
+| Sign In / Guest Entry | Sign In | Home |
+| Sign In / Guest Entry | Continue as Guest | Home — guest/read-only session |
+| Sign In / Guest Entry | Sign Up | Sign Up mode on the same authentication screen |
+| Home | Profile icon | Opens account menu overlay |
+| Account menu | Log out | Sign In / Guest Entry |
+| Account menu | Switch account | Sign In / Guest Entry |
+| Account menu | Sign in / Create account | Sign In / Guest Entry |
+| Home | List ↔ Map | Switches Home presentation only |
+| Home | RouteCard | Route Details |
+| Home | Add Route | Add Route |
+| Home | Report Flood | Report Flood |
+| Add Route | Back arrow | Home — changes discarded |
+| Add Route | Save Route | Home — route saved |
+| Route Details | Back arrow | Home |
+| Route Details | Report Flood | Report Flood |
+| Report Flood | Back arrow | Previous screen — Home or Route Details |
+| Report Flood | Map | Selects report location |
+| Report Flood | Flood depth | Opens flood-depth options |
+| Report Flood | Road-status control | Selects road status |
+| Report Flood | Submit Report | Home — report submitted |
+
+### Mockup refinements
+
+The underlying five-screen structure from the wireframes remains unchanged. Creating the full-color mockups revealed several visual-system details that were formally clarified for implementation.
+
+**Home navigation and view controls:** The final Home app bar contains Bahantabay branding and profile/account access, while the List ↔ Map segmented control is centered directly below it. Account actions use a Material overlay rather than a separate Profile screen.
+
+**Home Map presentation:** Home Map View uses an immersive Flood Blue treatment instead of the lighter embedded map treatment used on Add Route, Route Details, and Report Flood. The embedded map panels use Alice Blue, while the Home Map treatment reuses Flood Blue.
+
+**Route Details warning:** Route Details includes a distinct amber RouteWarningBanner between the route information and nearby reports. This is treated as a reusable component rather than one-off UI.
+
+**RouteCard status cue:** RouteCard retains both the text-labelled StatusBadge and a small leading status-color dot. Both are derived from the same route status, with the StatusBadge remaining the primary readable status indicator.
+
+These refinements do not introduce additional screens or change the approved MVP workflow.
