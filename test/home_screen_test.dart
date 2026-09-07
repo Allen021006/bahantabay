@@ -6,6 +6,7 @@ import 'package:bahantabay/core/theme/app_theme.dart';
 import 'package:bahantabay/features/flood_reports/presentation/widgets/flood_report_entry.dart';
 import 'package:bahantabay/features/home/presentation/screens/home_screen.dart';
 import 'package:bahantabay/features/routes/presentation/widgets/route_card.dart';
+import 'package:bahantabay/features/routes/presentation/screens/add_route_screen.dart';
 
 Widget _testApp({
   required bool isGuest,
@@ -25,6 +26,20 @@ Widget _testApp({
 }
 
 void main() {
+  testWidgets('signed-in user opens Add Route and returns without saving', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_testApp(isGuest: false));
+    await tester.tap(find.text('Add route'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AddRouteScreen), findsOneWidget);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.byType(AddRouteScreen), findsNothing);
+    expect(find.text('Saved routes'), findsOneWidget);
+    expect(find.byType(RouteCard), findsNWidgets(2));
+  });
+
   testWidgets('Home List View fits the approved phone proportions', (
     tester,
   ) async {

@@ -8,6 +8,7 @@ import '../../../../core/widgets/empty_state.dart';
 import '../../../flood_reports/domain/road_status.dart';
 import '../../../flood_reports/presentation/widgets/flood_report_entry.dart';
 import '../../../routes/domain/route_status.dart';
+import '../../../routes/presentation/screens/add_route_screen.dart';
 import '../../../routes/presentation/widgets/route_card.dart';
 import '../../../routes/presentation/widgets/status_badge.dart';
 
@@ -181,7 +182,9 @@ class _HomeScreenState extends State<HomeScreen> {
             TextButton.icon(
               onPressed: widget.isGuest
                   ? null
-                  : () => _showLaterMessage('Add Route'),
+                  : () => Navigator.of(context).push<void>(
+                      MaterialPageRoute(builder: (_) => const AddRouteScreen()),
+                    ),
               icon: const Icon(Icons.add),
               label: const Text('Add route'),
             ),
