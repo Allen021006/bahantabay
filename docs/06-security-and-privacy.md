@@ -2,7 +2,7 @@
 
 This repository is public. This document records the current security and privacy practices used by Bahantabay and will be updated as the backend and deployment are completed.
 
-**Last checked:** 2026-09-04
+**Last checked:** 2026-09-15 (Phase 8 SQL review; live deployment not verified)
 
 ## What this app stores
 
@@ -36,11 +36,11 @@ No Supabase `service_role` key, database password, service-account file, or othe
 
 Bahantabay uses **Supabase Authentication** for user authentication.
 
-Supabase Row Level Security will protect the PostgreSQL tables used for saved routes and community flood reports.
+Supabase Row Level Security is defined in the Phase 8 migration for saved routes and community flood reports. Protection in the live project is not claimed until the migration is applied and verified.
 
-**Current status as of 2026-09-04:** Supabase Authentication has been integrated, but the application database tables and final RLS policies have not yet been created. The application is therefore still using demo route and flood-report data.
+**Current status as of 2026-09-15:** Table definitions, constraints, grants, indexes, and RLS policies are implemented in `supabase/migrations/20260915000000_initial_schema.sql`. The SQL has not been applied to or tested against Supabase from this environment. The storage table above remains a description of planned live storage. Flutter still uses demo data and the Phase 7 local Add Route draft; Phase 9 persistence is not implemented.
 
-The planned access model is:
+The migration defines the following access model once applied:
 
 ### Saved routes
 
@@ -55,11 +55,13 @@ The planned access model is:
 - Flood reports are intended to be readable by signed-in users and guests so that community flood information remains useful without requiring an account.
 - Only authenticated users can create flood reports.
 - A submitted report must be associated with the authenticated user's ID rather than allowing the client to impersonate another user.
-- Update/delete permissions will be restricted so that users cannot arbitrarily modify reports belonging to other users.
+- Flood reports are append-only for clients: neither `anon` nor `authenticated` has UPDATE or DELETE permissions, even for their own reports.
+- Public reads include reporter UUIDs and notes, but no Auth email or other profile information. Notes must not contain private information.
+- The app's guest flow uses `anon`, not Supabase anonymous sign-in; guests cannot submit reports. Supabase anonymous sign-in is not used and should remain disabled.
 
-These rules describe the intended policy and **are not being marked as implemented or tested yet**.
+Both tables use required Auth ownership foreign keys with `ON DELETE CASCADE`: deleting an Auth account removes its routes and reports. Client writes cannot override database-generated IDs/timestamps or transfer route ownership. No optional `profiles` table is needed for current functionality.
 
-The exact RLS policies will be added to this document after the Supabase schema and policies are implemented and tested during the backend phase.
+See [database setup and verification](../supabase/README.md) for exact SQL Editor steps, grants, constraints, depth/status codes, and the rollback-only role tests in `supabase/tests/phase_8_rls.sql`. Schema/RLS SQL is prepared; live application and RLS testing remain unchecked below.
 
 ## Checklist
 
@@ -68,7 +70,9 @@ The exact RLS policies will be added to this document after the Supabase schema 
 - [x] No `service_role` key is intentionally used by the Flutter client.
 - [x] Current route and flood-report demo data is fictional/sample data.
 - [ ] Run and record the final repository-history secret scan: `git log -p | grep -i "api_key\|secret\|password\|token"` and verify that it finds no real secret.
-- [ ] Supabase RLS policies written and tested, not left open.
+- [x] Supabase table definitions and RLS policies written in the Phase 8 migration.
+- [ ] Migration applied to the intended Supabase project.
+- [ ] Supabase RLS role tests run successfully against the database, not just inspected.
 - [ ] Review all final screenshots for real personal data.
 - [ ] Review the final demo video for real personal data.
 - [ ] Verify that no course or university credentials appear anywhere in the public repository.
