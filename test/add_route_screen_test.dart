@@ -1,17 +1,23 @@
+import 'dart:async';
 import 'package:bahantabay/core/theme/app_theme.dart';
+import 'package:bahantabay/features/routes/data/route_service.dart';
+import 'support/fake_route_service.dart';
 import 'package:bahantabay/features/routes/presentation/screens/add_route_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  Future<void> openScreen(WidgetTester tester) async {
+  Future<void> openScreen(WidgetTester tester, {RouteService? service}) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
-      MaterialApp(theme: AppTheme.light, home: const AddRouteScreen()),
+      MaterialApp(
+        theme: AppTheme.light,
+        home: AddRouteScreen(routeService: service, userId: 'user-a'),
+      ),
     );
   }
 
@@ -39,7 +45,7 @@ void main() {
   });
 
   testWidgets(
-    'map taps select and replace endpoints; save keeps a local draft',
+    'map taps select and replace endpoints; missing service cannot save',
     (tester) async {
       await openScreen(tester);
       await tester.enterText(find.byType(TextFormField).first, 'School route');
@@ -69,12 +75,45 @@ void main() {
         line.polylines.single.points.last,
       );
       await save(tester);
-      expect(
-        find.text('Route preview is ready. Saving is not available yet.'),
-        findsOneWidget,
-      );
+      expect(find.text('Sign in to save a route.'), findsOneWidget);
       expect(find.byType(AddRouteScreen), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('pending save prevents duplicates and failure preserves draft', (
+    tester,
+  ) async {
+    final pending = Completer<void>();
+    final service = FakeRouteService()..onSave = () => pending.future;
+    await openScreen(tester, service: service);
+    await tester.enterText(find.byType(TextFormField).first, 'My route');
+    final map = find.byKey(const Key('add-route-map'));
+    await tester.tapAt(tester.getCenter(map) - const Offset(60, 30));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tapAt(tester.getCenter(map) + const Offset(60, 30));
+    await tester.pump(const Duration(milliseconds: 400));
+    await save(tester);
+    expect(service.saveCalls, 1);
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNull,
+    );
+    await tester.tap(find.byType(FilledButton));
+    expect(service.saveCalls, 1);
+    pending.completeError(
+      const RouteFailure('Could not save your route. Please try again.'),
+    );
+    await tester.pump();
+    expect(
+      find.text('Could not save your route. Please try again.'),
+      findsOneWidget,
+    );
+    expect(find.text('My route'), findsOneWidget);
+    expect(find.byType(PolylineLayer), findsOneWidget);
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNotNull,
+    );
+  });
 }

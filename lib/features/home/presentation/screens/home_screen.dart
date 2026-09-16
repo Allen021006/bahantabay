@@ -8,6 +8,8 @@ import '../../../../core/widgets/empty_state.dart';
 import '../../../flood_reports/domain/road_status.dart';
 import '../../../flood_reports/presentation/widgets/flood_report_entry.dart';
 import '../../../routes/domain/route_status.dart';
+import '../../../routes/domain/saved_route.dart';
+import '../../../routes/data/route_service.dart';
 import '../../../routes/presentation/screens/add_route_screen.dart';
 import '../../../routes/presentation/widgets/route_card.dart';
 import '../../../routes/presentation/widgets/status_badge.dart';
@@ -23,12 +25,16 @@ class HomeScreen extends StatefulWidget {
     required this.onReturnToAuth,
     this.email,
     this.showDemoData = true,
+    this.userId,
+    this.routeService,
   });
 
   final bool isGuest;
   final String? email;
   final Future<void> Function() onReturnToAuth;
   final bool showDemoData;
+  final String? userId;
+  final RouteService? routeService;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -44,6 +50,106 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   HomeView _selectedView = HomeView.list;
+  List<SavedRoute> _routes = [];
+  bool _loadingRoutes = false;
+  String? _routeError;
+  int _loadVersion = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRoutes();
+  }
+
+  @override
+  void didUpdateWidget(HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.userId != widget.userId ||
+        oldWidget.isGuest != widget.isGuest ||
+        oldWidget.routeService != widget.routeService) {
+      _loadRoutes();
+    }
+  }
+
+  Future<void> _loadRoutes() async {
+    final version = ++_loadVersion;
+    setState(() {
+      _routes = [];
+      _routeError = null;
+      _loadingRoutes = !widget.isGuest;
+    });
+    if (widget.isGuest) return;
+    try {
+      final service = widget.routeService;
+      final userId = widget.userId;
+      if (service == null || userId == null) {
+        throw const RouteFailure(
+          'Routes are unavailable. Please sign in again.',
+        );
+      }
+      final routes = await service.fetchRoutes(userId);
+      if (!mounted || version != _loadVersion) return;
+      setState(
+        () =>
+            _routes = routes.where((route) => route.userId == userId).toList(),
+      );
+    } catch (error) {
+      if (!mounted || version != _loadVersion) return;
+      setState(
+        () => _routeError = error is RouteFailure
+            ? error.message
+            : 'Could not load your routes. Please try again.',
+      );
+    } finally {
+      if (mounted && version == _loadVersion) {
+        setState(() => _loadingRoutes = false);
+      }
+    }
+  }
+
+  Future<void> _openAddRoute() async {
+    if (widget.isGuest) return;
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => AddRouteScreen(
+          routeService: widget.routeService,
+          userId: widget.userId,
+        ),
+      ),
+    );
+    if (mounted && saved == true) await _loadRoutes();
+  }
+
+  String _coordinates(double latitude, double longitude) =>
+      '${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}';
+
+  Widget _buildRouteState() {
+    if (_loadingRoutes) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(AppSpacing.md),
+          child: CircularProgressIndicator(
+            semanticsLabel: 'Loading saved routes',
+          ),
+        ),
+      );
+    }
+    if (_routeError != null) {
+      return Column(
+        children: [
+          Text(
+            _routeError!,
+            style: const TextStyle(color: AppColors.errorText),
+          ),
+          TextButton(onPressed: _loadRoutes, child: const Text('Retry routes')),
+        ],
+      );
+    }
+    return const EmptyState(
+      message: 'No saved routes yet.',
+      icon: Icons.route_outlined,
+    );
+  }
 
   void _showLaterMessage(String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -180,18 +286,32 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             TextButton.icon(
-              onPressed: widget.isGuest
-                  ? null
-                  : () => Navigator.of(context).push<void>(
-                      MaterialPageRoute(builder: (_) => const AddRouteScreen()),
-                    ),
+              onPressed: widget.isGuest ? null : _openAddRoute,
               icon: const Icon(Icons.add),
               label: const Text('Add route'),
             ),
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
-        if (widget.showDemoData) ...[
+        if (!widget.isGuest) ...[
+          if (_routes.isEmpty) _buildRouteState(),
+          for (final route in _routes) ...[
+            RouteCard(
+              routeName: route.name,
+              startLabel: _coordinates(
+                route.startLatitude,
+                route.startLongitude,
+              ),
+              endLabel: _coordinates(
+                route.destinationLatitude,
+                route.destinationLongitude,
+              ),
+              status: null,
+              onTap: () => _showLaterMessage('Route Details'),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+        ] else if (widget.showDemoData) ...[
           RouteCard(
             routeName: 'School route',
             startLabel: 'St. Ignatius Subd.',
@@ -220,6 +340,8 @@ class _HomeScreenState extends State<HomeScreen> {
           'Nearby flood reports',
           style: Theme.of(context).textTheme.headlineSmall,
         ),
+        if (widget.showDemoData)
+          Text('Demo reports', style: Theme.of(context).textTheme.labelSmall),
         const SizedBox(height: AppSpacing.sm),
         if (widget.showDemoData)
           ClipRRect(
@@ -262,13 +384,32 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMapView() {
+    final selected = _routes.isEmpty ? null : _routes.first;
+    final showDemoRoute = widget.isGuest && widget.showDemoData;
+    final start = showDemoRoute
+        ? _routeStart
+        : selected == null
+        ? null
+        : LatLng(selected.startLatitude, selected.startLongitude);
+    final destination = showDemoRoute
+        ? _routeDestination
+        : selected == null
+        ? null
+        : LatLng(selected.destinationLatitude, selected.destinationLongitude);
     return Stack(
       children: [
         FlutterMap(
-          key: const Key('home-map'),
-          options: const MapOptions(
+          key: ValueKey('home-map-${selected?.id ?? 'demo'}'),
+          options: MapOptions(
             initialCenter: _mapCenter,
             initialZoom: 15.2,
+            initialCameraFit: start == null || destination == null
+                ? null
+                : CameraFit.bounds(
+                    bounds: LatLngBounds(start, destination),
+                    padding: const EdgeInsets.fromLTRB(48, 48, 48, 200),
+                    maxZoom: 16,
+                  ),
           ),
           children: [
             ColorFiltered(
@@ -281,41 +422,48 @@ class _HomeScreenState extends State<HomeScreen> {
                 userAgentPackageName: 'com.bahantabay.app',
               ),
             ),
-            PolylineLayer(
-              polylines: [
-                Polyline(
-                  points: [_routeStart, _routeDestination],
-                  color: AppColors.surface,
-                  strokeWidth: 4,
-                  pattern: StrokePattern.dashed(segments: [12, 8]),
-                ),
-              ],
-            ),
+            if (start != null && destination != null)
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: [start, destination],
+                    color: AppColors.surface,
+                    strokeWidth: 4,
+                    pattern: StrokePattern.dashed(segments: [12, 8]),
+                  ),
+                ],
+              ),
             MarkerLayer(
               markers: [
-                const Marker(
-                  point: _routeStart,
-                  width: 44,
-                  height: 44,
-                  child: _RoutePointMarker(
-                    key: Key('route-start-marker'),
-                    label: 'Route start point',
-                    color: AppColors.warning,
-                    icon: Icons.trip_origin,
+                if (start != null)
+                  Marker(
+                    point: start,
+                    width: 44,
+                    height: 44,
+                    child: _RoutePointMarker(
+                      key: Key('route-start-marker'),
+                      label: 'Route start point',
+                      color: AppColors.warning,
+                      icon: Icons.trip_origin,
+                    ),
                   ),
-                ),
-                const Marker(
-                  point: _routeDestination,
-                  width: 44,
-                  height: 44,
-                  child: _RoutePointMarker(
-                    key: Key('route-destination-marker'),
-                    label: 'Route destination point',
-                    color: AppColors.floodRed,
-                    icon: Icons.flag,
+                if (destination != null)
+                  Marker(
+                    point: destination,
+                    width: 44,
+                    height: 44,
+                    child: _RoutePointMarker(
+                      key: Key('route-destination-marker'),
+                      label: 'Route destination point',
+                      color: AppColors.floodRed,
+                      icon: Icons.flag,
+                    ),
                   ),
-                ),
-                for (var index = 0; index < _floodReports.length; index++)
+                for (
+                  var index = 0;
+                  index < (widget.showDemoData ? _floodReports.length : 0);
+                  index++
+                )
                   Marker(
                     point: _floodReports[index],
                     width: 44,
@@ -334,17 +482,42 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
+        if (widget.showDemoData)
+          Positioned(
+            top: AppSpacing.sm,
+            left: AppSpacing.sm,
+            child: Material(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.xs),
+                child: Text(
+                  'Demo flood markers',
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+              ),
+            ),
+          ),
         Positioned(
           left: AppSpacing.lg,
           right: AppSpacing.lg,
           bottom: 88,
-          child: _buildSelectedRouteCard(),
+          child: showDemoRoute || selected != null
+              ? _buildSelectedRouteCard(selected)
+              : Material(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: _buildRouteState(),
+                  ),
+                ),
         ),
       ],
     );
   }
 
-  Widget _buildSelectedRouteCard() {
+  Widget _buildSelectedRouteCard(SavedRoute? selected) {
     return Material(
       key: const Key('selected-route-warning-card'),
       color: AppColors.surface,
@@ -354,7 +527,8 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Row(
           children: [
-            const StatusBadge(status: RouteStatus.warning),
+            if (selected == null)
+              const StatusBadge(status: RouteStatus.warning),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
@@ -362,11 +536,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'School route',
+                    selected?.name ?? 'School route',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   Text(
-                    'St. Ignatius Subd. to Holy Angel University',
+                    selected == null
+                        ? 'St. Ignatius Subd. to Holy Angel University'
+                        : 'Status not assessed',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall,

@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bahantabay/core/theme/app_theme.dart';
 import 'package:bahantabay/features/authentication/data/auth_service.dart';
 import 'package:bahantabay/features/authentication/presentation/auth_gate.dart';
+import 'package:bahantabay/features/routes/data/route_service.dart';
+import 'support/fake_route_service.dart';
 
 class FakeAuthService implements AuthService {
   FakeAuthService({this.hasActiveSession = false, this.currentUserEmail});
@@ -17,6 +19,21 @@ class FakeAuthService implements AuthService {
 
   @override
   String? currentUserEmail;
+
+  @override
+  String? get currentUserId => hasActiveSession ? currentUserEmail : null;
+
+  void changeAccount(String? email) {
+    currentUserEmail = email;
+    hasActiveSession = email != null;
+    _sessionController.add(
+      AuthSessionSnapshot(
+        isSignedIn: hasActiveSession,
+        email: email,
+        userId: currentUserId,
+      ),
+    );
+  }
 
   int signOutCalls = 0;
 
@@ -46,14 +63,45 @@ class FakeAuthService implements AuthService {
   Future<void> dispose() => _sessionController.close();
 }
 
-Widget _testApp(AuthService? service) {
+Widget _testApp(AuthService? service, {RouteService? routes}) {
   return MaterialApp(
     theme: AppTheme.light,
-    home: AuthGate(authService: service),
+    home: AuthGate(authService: service, routeService: routes),
   );
 }
 
 void main() {
+  testWidgets('account change discards open draft and stale route response', (
+    tester,
+  ) async {
+    final auth = FakeAuthService(
+      hasActiveSession: true,
+      currentUserEmail: 'a@example.com',
+    );
+    addTearDown(auth.dispose);
+    final pending = Completer<List<Never>>();
+    final routes = FakeRouteService()
+      ..routes = [
+        exampleRoute(userId: 'b@example.com', name: 'B private route'),
+      ];
+    routes.onFetch = (id) async =>
+        id == 'a@example.com' ? await pending.future : routes.routes;
+    await tester.pumpWidget(_testApp(auth, routes: routes));
+    await tester.tap(find.text('Add route'));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Route name'), findsOneWidget);
+    auth.changeAccount('b@example.com');
+    await tester.pumpAndSettle();
+    expect(find.text('Route name'), findsNothing);
+    expect(find.text('B private route'), findsOneWidget);
+    pending.complete([]);
+    await tester.pumpAndSettle();
+    expect(find.text('B private route'), findsOneWidget);
+    auth.changeAccount(null);
+    await tester.pumpAndSettle();
+    expect(find.text('B private route'), findsNothing);
+    expect(find.text('Continue as Guest'), findsOneWidget);
+  });
   testWidgets('restores an existing authenticated session', (tester) async {
     final service = FakeAuthService(
       hasActiveSession: true,

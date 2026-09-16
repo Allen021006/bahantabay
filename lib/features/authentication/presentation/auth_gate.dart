@@ -3,13 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../home/presentation/screens/home_screen.dart';
+import '../../routes/data/route_service.dart';
 import '../data/auth_service.dart';
 import 'screens/sign_in_screen.dart';
 
 class AuthGate extends StatefulWidget {
-  const AuthGate({super.key, this.authService});
+  const AuthGate({super.key, this.authService, this.routeService});
 
   final AuthService? authService;
+  final RouteService? routeService;
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -20,12 +22,14 @@ class _AuthGateState extends State<AuthGate> {
   late bool _isSignedIn;
   bool _isGuest = false;
   String? _email;
+  String? _userId;
 
   @override
   void initState() {
     super.initState();
     _isSignedIn = widget.authService?.hasActiveSession ?? false;
     _email = widget.authService?.currentUserEmail;
+    _userId = widget.authService?.currentUserId;
     _sessionSubscription = widget.authService?.sessionChanges.listen(
       _handleSessionChange,
     );
@@ -42,6 +46,7 @@ class _AuthGateState extends State<AuthGate> {
     setState(() {
       _isSignedIn = session.isSignedIn;
       _email = session.email;
+      _userId = session.userId;
       if (_isSignedIn) _isGuest = false;
     });
   }
@@ -53,6 +58,7 @@ class _AuthGateState extends State<AuthGate> {
       setState(() {
         _isSignedIn = true;
         _email = service.currentUserEmail;
+        _userId = service.currentUserId;
       });
     }
     return null;
@@ -66,6 +72,7 @@ class _AuthGateState extends State<AuthGate> {
       setState(() {
         _isSignedIn = true;
         _email = service.currentUserEmail;
+        _userId = service.currentUserId;
       });
       return null;
     }
@@ -88,6 +95,7 @@ class _AuthGateState extends State<AuthGate> {
       _isGuest = true;
       _isSignedIn = false;
       _email = null;
+      _userId = null;
     });
   }
 
@@ -108,6 +116,7 @@ class _AuthGateState extends State<AuthGate> {
       setState(() {
         _isSignedIn = false;
         _email = null;
+        _userId = null;
       });
     } on AuthFailure catch (error) {
       if (!mounted) return;
@@ -120,10 +129,18 @@ class _AuthGateState extends State<AuthGate> {
   @override
   Widget build(BuildContext context) {
     if (_isSignedIn || _isGuest) {
-      return HomeScreen(
-        isGuest: _isGuest,
-        email: _email,
-        onReturnToAuth: _leaveSession,
+      // Discard Home data and any open route draft when the account changes.
+      return Navigator(
+        key: ValueKey(_isGuest ? 'guest' : _userId),
+        onGenerateRoute: (_) => MaterialPageRoute<void>(
+          builder: (_) => HomeScreen(
+            isGuest: _isGuest,
+            userId: _userId,
+            email: _email,
+            routeService: widget.routeService,
+            onReturnToAuth: _leaveSession,
+          ),
+        ),
       );
     }
 

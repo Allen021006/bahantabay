@@ -2,19 +2,19 @@
 
 This repository is public. This document records the current security and privacy practices used by Bahantabay and will be updated as the backend and deployment are completed.
 
-**Last checked:** 2026-09-15 (Phase 8 SQL review; live deployment not verified)
+**Last checked:** 2026-09-15 (Phase 9 client integration; Phase 8 deployment and RLS verification confirmed by project owner)
 
 ## What this app stores
 
 | Data | Where it lives | Who can see it |
 | --- | --- | --- |
 | User authentication account and session | Supabase Authentication | The authenticated user; authentication is managed by Supabase |
-| Saved routes | Supabase PostgreSQL *(planned — database tables not yet implemented)* | Intended to be readable by their owner; access will be enforced through RLS |
-| Route start and destination coordinates | Supabase PostgreSQL *(planned — database tables not yet implemented)* | Intended to follow the access rules of the saved route |
-| Community flood reports | Supabase PostgreSQL *(planned — database tables not yet implemented)* | Intended to be readable by users and guests because the reports provide community flood information; creation will require an authenticated user |
-| Flood location coordinates | Supabase PostgreSQL *(planned — database tables not yet implemented)* | Intended to be readable with the associated community flood report |
-| Flood depth, road status, optional notes, and report time | Supabase PostgreSQL *(planned — database tables not yet implemented)* | Intended to be readable with the associated community flood report |
-| Current demo routes and flood reports | Application source code | Anyone viewing the public repository or running the current demo; all entries are fictional/sample data |
+| Saved routes | Supabase PostgreSQL; Phase 9 client fetch/insert implemented | Authenticated owner, enforced by RLS |
+| Route start and destination coordinates | Supabase PostgreSQL | Same owner-only access as the saved route |
+| Community flood reports | Schema deployed; Flutter report persistence not yet implemented | Database allows public reads and authenticated owner inserts |
+| Flood location coordinates | Schema deployed; Flutter still shows demo markers | Publicly readable with the associated report once submitted |
+| Flood depth, road status, optional notes, and report time | Schema deployed; Flutter report persistence not yet implemented | Publicly readable with the associated report |
+| Guest demo routes and demo flood reports | Application source code | Anyone viewing the repository or app; fictional/sample data |
 
 Flood-report photos are a stretch goal and are **not currently stored**. If implemented later, they will require a separate privacy and Supabase Storage access review before being enabled.
 
@@ -36,11 +36,11 @@ No Supabase `service_role` key, database password, service-account file, or othe
 
 Bahantabay uses **Supabase Authentication** for user authentication.
 
-Supabase Row Level Security is defined in the Phase 8 migration for saved routes and community flood reports. Protection in the live project is not claimed until the migration is applied and verified.
+Supabase Row Level Security is defined in the Phase 8 migration for saved routes and community flood reports. The project owner confirms the migration was applied and RLS verification passed before Phase 9.
 
-**Current status as of 2026-09-15:** Table definitions, constraints, grants, indexes, and RLS policies are implemented in `supabase/migrations/20260915000000_initial_schema.sql`. The SQL has not been applied to or tested against Supabase from this environment. The storage table above remains a description of planned live storage. Flutter still uses demo data and the Phase 7 local Add Route draft; Phase 9 persistence is not implemented.
+**Current status as of 2026-09-15:** Flutter Add Route now inserts into `routes` through the existing Supabase client, and signed-in Home fetches that user's saved routes. Tests use injected fake services and do not prove a live end-to-end save. No database changes were needed for Phase 9. Flood reports remain demo data; Route Details and route-status calculation remain unfinished.
 
-The migration defines the following access model once applied:
+The deployed migration defines the following access model:
 
 ### Saved routes
 
@@ -49,6 +49,9 @@ The migration defines the following access model once applied:
 - A user cannot create a saved route on behalf of another user.
 - A user cannot modify or delete another user's saved routes.
 - Guest users cannot create or modify saved routes.
+- The route service checks the active session ID, filters reads by owner ID, and supplies that same ID on inserts for RLS validation. IDs and creation timestamps are left to database defaults.
+- Switching accounts/signing out discards the old Home state and open Add Route draft. Old asynchronous results cannot populate a new account's route list.
+- Guest Home keeps read-only demo routes and does not fetch private routes. Real saved routes display “Status not assessed”; demo reports/markers are explicitly labelled.
 
 ### Community flood reports
 
@@ -61,7 +64,7 @@ The migration defines the following access model once applied:
 
 Both tables use required Auth ownership foreign keys with `ON DELETE CASCADE`: deleting an Auth account removes its routes and reports. Client writes cannot override database-generated IDs/timestamps or transfer route ownership. No optional `profiles` table is needed for current functionality.
 
-See [database setup and verification](../supabase/README.md) for exact SQL Editor steps, grants, constraints, depth/status codes, and the rollback-only role tests in `supabase/tests/phase_8_rls.sql`. Schema/RLS SQL is prepared; live application and RLS testing remain unchecked below.
+See [database setup and verification](../supabase/README.md) for the Phase 8 setup instructions, grants, constraints, and rollback-only role tests in `supabase/tests/phase_8_rls.sql`. Its original preparation status predates the project owner's confirmation; do not rerun the initial migration on the deployed tables.
 
 ## Checklist
 
@@ -71,8 +74,10 @@ See [database setup and verification](../supabase/README.md) for exact SQL Edito
 - [x] Current route and flood-report demo data is fictional/sample data.
 - [ ] Run and record the final repository-history secret scan: `git log -p | grep -i "api_key\|secret\|password\|token"` and verify that it finds no real secret.
 - [x] Supabase table definitions and RLS policies written in the Phase 8 migration.
-- [ ] Migration applied to the intended Supabase project.
-- [ ] Supabase RLS role tests run successfully against the database, not just inspected.
+- [x] Migration applied to the intended Supabase project (confirmed by project owner before Phase 9).
+- [x] Supabase RLS role tests run successfully against the database (confirmed by project owner before Phase 9).
+- [x] Phase 9 route fetch/insert client integration and offline automated tests implemented.
+- [ ] Live end-to-end Phase 9 save/reload and account-isolation smoke test recorded.
 - [ ] Review all final screenshots for real personal data.
 - [ ] Review the final demo video for real personal data.
 - [ ] Verify that no course or university credentials appear anywhere in the public repository.

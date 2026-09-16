@@ -18,7 +18,7 @@ class RouteCard extends StatelessWidget {
   final String routeName;
   final String startLabel;
   final String endLabel;
-  final RouteStatus status;
+  final RouteStatus? status;
   final VoidCallback? onTap;
 
   @override
@@ -37,7 +37,7 @@ class RouteCard extends StatelessWidget {
                 width: 10,
                 height: 10,
                 decoration: BoxDecoration(
-                  color: status.backgroundColor,
+                  color: status?.backgroundColor ?? AppColors.mutedText,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -57,11 +57,16 @@ class RouteCard extends StatelessWidget {
                       '$startLabel → $endLabel',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
+                    if (status == null)
+                      Text(
+                        'Status not assessed',
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
                   ],
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              StatusBadge(status: status),
+              if (status != null) StatusBadge(status: status!),
               const SizedBox(width: AppSpacing.sm),
               const Icon(
                 Icons.chevron_right,

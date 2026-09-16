@@ -5,9 +5,13 @@ import 'package:latlong2/latlong.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../data/route_service.dart';
+import '../../domain/saved_route.dart';
 
 class AddRouteScreen extends StatefulWidget {
-  const AddRouteScreen({super.key});
+  const AddRouteScreen({super.key, this.routeService, this.userId});
+  final RouteService? routeService;
+  final String? userId;
 
   @override
   State<AddRouteScreen> createState() => _AddRouteScreenState();
@@ -22,6 +26,8 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
   LatLng? _destination;
   bool _selectingStart = true;
   bool _showValidation = false;
+  bool _isSaving = false;
+  String? _saveError;
 
   @override
   void dispose() {
@@ -32,6 +38,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
   }
 
   void _selectPoint(LatLng point) {
+    if (_isSaving) return;
     setState(() {
       final coordinates =
           '${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}';
@@ -47,18 +54,44 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
     if (_showValidation) _formKey.currentState!.validate();
   }
 
-  void _saveRoute() {
+  Future<void> _saveRoute() async {
+    if (_isSaving) return;
     FocusScope.of(context).unfocus();
     setState(() => _showValidation = true);
     if (!_formKey.currentState!.validate()) return;
-    // Phase 7 validates only. Keep the draft here until persistence is added.
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(
-          content: Text('Route preview is ready. Saving is not available yet.'),
+    final service = widget.routeService;
+    final userId = widget.userId;
+    if (service == null || userId == null) {
+      setState(() => _saveError = 'Sign in to save a route.');
+      return;
+    }
+    setState(() {
+      _isSaving = true;
+      _saveError = null;
+    });
+    try {
+      await service.saveRoute(
+        userId,
+        RouteDraft(
+          name: _nameController.text,
+          startLatitude: _start!.latitude,
+          startLongitude: _start!.longitude,
+          destinationLatitude: _destination!.latitude,
+          destinationLongitude: _destination!.longitude,
         ),
       );
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) return;
+      setState(
+        () => _saveError = error is RouteFailure
+            ? error.message
+            : 'Could not save your route. Please try again.',
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
@@ -75,6 +108,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
               TextFormField(
+                enabled: !_isSaving,
                 controller: _nameController,
                 textCapitalization: TextCapitalization.sentences,
                 decoration: _decoration('Route name', 'e.g. Home to School'),
@@ -101,7 +135,20 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
               const SizedBox(height: AppSpacing.md),
               _buildPointField(isStart: false),
               const SizedBox(height: AppSpacing.lg),
-              PrimaryButton(label: 'Save route', onPressed: _saveRoute),
+              if (_saveError != null) ...[
+                Text(
+                  _saveError!,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppColors.errorText),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+              PrimaryButton(
+                label: 'Save route',
+                onPressed: _saveRoute,
+                isLoading: _isSaving,
+              ),
             ],
           ),
         ),

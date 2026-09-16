@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_theme.dart';
 import '../features/authentication/data/auth_service.dart';
 import '../features/authentication/presentation/auth_gate.dart';
+import '../features/routes/data/route_service.dart';
 
 class BahantabayApp extends StatelessWidget {
-  const BahantabayApp({super.key, this.authService});
+  const BahantabayApp({super.key, this.authService, this.routeService});
 
   final AuthService? authService;
+  final RouteService? routeService;
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +20,7 @@ class BahantabayApp extends StatelessWidget {
       locale: DevicePreview.locale(context),
       builder: DevicePreview.appBuilder,
       theme: AppTheme.light,
-      home: AuthGate(authService: authService),
+      home: AuthGate(authService: authService, routeService: routeService),
     );
   }
 }

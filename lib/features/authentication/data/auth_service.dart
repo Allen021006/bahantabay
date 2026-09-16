@@ -1,10 +1,15 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthSessionSnapshot {
-  const AuthSessionSnapshot({required this.isSignedIn, this.email});
+  const AuthSessionSnapshot({
+    required this.isSignedIn,
+    this.email,
+    this.userId,
+  });
 
   final bool isSignedIn;
   final String? email;
+  final String? userId;
 }
 
 class AuthFailure implements Exception {
@@ -16,6 +21,7 @@ class AuthFailure implements Exception {
 abstract interface class AuthService {
   bool get hasActiveSession;
   String? get currentUserEmail;
+  String? get currentUserId;
   Stream<AuthSessionSnapshot> get sessionChanges;
 
   Future<void> signIn({required String email, required String password});
@@ -35,11 +41,15 @@ class SupabaseAuthService implements AuthService {
   String? get currentUserEmail => _client.auth.currentUser?.email;
 
   @override
+  String? get currentUserId => _client.auth.currentUser?.id;
+
+  @override
   Stream<AuthSessionSnapshot> get sessionChanges {
     return _client.auth.onAuthStateChange.map((state) {
       return AuthSessionSnapshot(
         isSignedIn: state.session != null,
         email: state.session?.user.email,
+        userId: state.session?.user.id,
       );
     });
   }
