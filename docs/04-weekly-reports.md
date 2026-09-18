@@ -3,7 +3,56 @@
 One entry per week, newest at the top, written **during** that week. These reports record the actual progress of Bahantabay throughout development.
 
 ---
+## Week 2 — (September 7 to September 13, 2026)
 
+### Work Completed
+
+This week focused on moving Bahantabay beyond its initial interface and prototype state toward a functional application backed by real data and authentication.
+
+The Add Route flow was completed as the next major user-facing feature. Authenticated users can enter a route name, select a start point and destination directly from an interactive map, and preview the route using two endpoint markers connected by a straight dashed line. The form validates that a route has a name and two distinct coordinates before it can proceed. The route representation intentionally remains a simple two-point line for the MVP rather than using a road-following routing API.
+
+The Home screen was also integrated with the Add Route flow while preserving the existing List and Map presentation states. Guest users remain read-only, while authenticated users are given access to route-creation functionality.
+
+The project backend was then expanded using Supabase PostgreSQL. An initial database migration was created for the `routes` and `flood_reports` tables. The schema uses UUID identifiers, database-generated timestamps, coordinate constraints, authentication-based ownership, and supporting indexes. The flood-report schema also defines controlled values for flood depth and road passability.
+
+Row Level Security (RLS) policies were implemented as part of the database design. Saved routes are private to their authenticated owners, while flood reports are designed to be publicly readable for community flood awareness. Only authenticated users are permitted to create flood reports, and arbitrary client-side updating or deletion of reports is prohibited. Guest users remain unable to create or modify routes and flood reports.
+
+A dedicated SQL verification script was also prepared to test the security rules using two different authenticated users and the anonymous role. The tests cover route ownership, cross-account access restrictions, guest restrictions, public flood-report visibility, invalid values, coordinate constraints, and prohibited flood-report modifications. Test fixtures are rolled back after verification to avoid leaving unnecessary records in the database.
+
+Work also began on connecting the completed Add Route interface to the real Supabase backend. A typed saved-route model and route data service were introduced so route information can be converted cleanly between Flutter and the PostgreSQL schema. The architecture was kept minimal and testable rather than introducing unnecessary CRUD functionality or additional dependencies.
+
+Authentication and navigation handling were strengthened to support account-specific route data. This includes ensuring that changing accounts does not retain another user's private route state. The existing Supabase publishable-key configuration and RLS-based security model were preserved without introducing privileged credentials into the Flutter client.
+
+### Testing and Validation
+
+The Flutter project continued to be checked using `flutter analyze`, `flutter test`, formatting tools, and `git diff --check` as features were added.
+
+Automated tests were expanded for the Add Route flow, route model and service behavior, Home integration, authentication state changes, guest restrictions, validation, loading behavior, and error handling.
+
+The Supabase schema and RLS policies were also tested separately using SQL-based security checks. These checks were designed to confirm that one authenticated account cannot access another account's private routes, while community flood reports remain publicly readable according to the intended MVP security model.
+
+### Challenges and Decisions
+
+One important design decision was to keep route geometry intentionally simple for the MVP. Routes currently consist of a selected start point and destination connected by a straight dashed line. Road-following services such as OSRM or OpenRouteService remain outside the current MVP scope.
+
+Another major focus was maintaining a clear separation between public and private data. Saved routes are treated as account-specific information, while flood reports are community information intended to be visible to both authenticated users and guests. Supabase RLS is used as the database-level enforcement mechanism rather than relying only on Flutter interface restrictions.
+
+The implementation also continued to avoid unnecessary scope expansion. Photo uploads, Supabase Storage, geocoding, advanced routing, and automatic route-status calculations were intentionally deferred so development could remain focused on the required MVP.
+
+### Current Project Status
+
+By the end of the week, Bahantabay had progressed from its initial authenticated Home interface into an application with a functional Add Route workflow, an established Supabase database schema, and a defined RLS security model.
+
+The five-screen MVP structure remains unchanged:
+
+1. Sign In / Guest Entry
+2. Home
+3. Add Route
+4. Route Details
+5. Report Flood
+
+The next development work will focus on completing and validating persistent saved routes through Supabase before proceeding to community flood-report submission and the remaining MVP screens.
+______________________________________________
 ## Week 1 (August 31 to September 6, 2026)
 
 ## **Done this week**
