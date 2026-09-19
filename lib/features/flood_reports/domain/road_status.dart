@@ -2,7 +2,18 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 
-enum RoadStatus { passable, notPassable }
+enum RoadStatus {
+  passable('passable'),
+  notPassable('not_passable');
+
+  const RoadStatus(this.code);
+  final String code;
+
+  static RoadStatus fromCode(String code) => values.firstWhere(
+    (status) => status.code == code,
+    orElse: () => throw const FormatException('Unknown road status.'),
+  );
+}
 
 extension RoadStatusStyle on RoadStatus {
   String get label {

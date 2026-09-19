@@ -4,14 +4,21 @@ import 'package:flutter/material.dart';
 
 import '../../home/presentation/screens/home_screen.dart';
 import '../../routes/data/route_service.dart';
+import '../../flood_reports/data/flood_report_service.dart';
 import '../data/auth_service.dart';
 import 'screens/sign_in_screen.dart';
 
 class AuthGate extends StatefulWidget {
-  const AuthGate({super.key, this.authService, this.routeService});
+  const AuthGate({
+    super.key,
+    this.authService,
+    this.routeService,
+    this.floodReportService,
+  });
 
   final AuthService? authService;
   final RouteService? routeService;
+  final FloodReportService? floodReportService;
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -129,7 +136,7 @@ class _AuthGateState extends State<AuthGate> {
   @override
   Widget build(BuildContext context) {
     if (_isSignedIn || _isGuest) {
-      // Discard Home data and any open route draft when the account changes.
+      // Discard Home data and any open route/report draft when the account changes.
       return Navigator(
         key: ValueKey(_isGuest ? 'guest' : _userId),
         onGenerateRoute: (_) => MaterialPageRoute<void>(
@@ -138,6 +145,7 @@ class _AuthGateState extends State<AuthGate> {
             userId: _userId,
             email: _email,
             routeService: widget.routeService,
+            floodReportService: widget.floodReportService,
             onReturnToAuth: _leaveSession,
           ),
         ),

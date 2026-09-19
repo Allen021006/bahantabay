@@ -12,6 +12,7 @@ class FloodReportEntry extends StatelessWidget {
     required this.roadStatus,
     required this.createdAt,
     this.onTap,
+    this.notes,
   });
 
   final String location;
@@ -19,6 +20,7 @@ class FloodReportEntry extends StatelessWidget {
   final RoadStatus roadStatus;
   final DateTime createdAt;
   final VoidCallback? onTap;
+  final String? notes;
 
   String get _createdAtLabel {
     final age = DateTime.now().difference(createdAt);
@@ -62,6 +64,13 @@ class FloodReportEntry extends StatelessWidget {
                       ),
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
+                    if (notes != null && notes!.trim().isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        notes!,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
                   ],
                 ),
               ),

@@ -3,6 +3,11 @@ import 'dart:async';
 import 'package:bahantabay/features/routes/data/route_service.dart';
 import 'package:bahantabay/features/routes/domain/saved_route.dart';
 import 'support/fake_route_service.dart';
+import 'support/fake_flood_report_service.dart';
+import 'support/flood_form_actions.dart';
+import 'package:bahantabay/features/flood_reports/data/flood_report_service.dart';
+import 'package:bahantabay/features/flood_reports/domain/flood_report.dart';
+import 'package:bahantabay/features/flood_reports/presentation/screens/report_flood_screen.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -18,6 +23,7 @@ Widget _testApp({
   bool showDemoData = true,
   Future<void> Function()? onReturnToAuth,
   RouteService? routeService,
+  FloodReportService? floodReportService,
 }) {
   return MaterialApp(
     theme: AppTheme.light,
@@ -31,6 +37,15 @@ Widget _testApp({
           (FakeRouteService()
             ..routes = showDemoData
                 ? [exampleRoute(), exampleRoute(name: 'Work route')]
+                : []),
+      floodReportService:
+          floodReportService ??
+          (FakeFloodReportService()
+            ..reports = showDemoData
+                ? [
+                    exampleFloodReport(),
+                    exampleFloodReport(id: 'report-1', notes: null),
+                  ]
                 : []),
       onReturnToAuth: onReturnToAuth ?? () async {},
     ),
@@ -67,7 +82,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('signed-in Home shell renders saved routes and demo reports', (
+  testWidgets('signed-in Home shell renders saved routes and public reports', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -78,11 +93,14 @@ void main() {
     expect(find.byTooltip('Account menu'), findsOneWidget);
     expect(find.byType(SegmentedButton<HomeView>), findsOneWidget);
     expect(find.text('Saved routes'), findsOneWidget);
-    expect(find.text('Nearby flood reports'), findsOneWidget);
+    expect(find.text('Flood reports'), findsOneWidget);
     expect(find.byType(RouteCard), findsNWidgets(2));
     expect(find.byType(FloodReportEntry), findsNWidgets(2));
     expect(find.text('School route'), findsOneWidget);
-    expect(find.text('Fiesta Community'), findsOneWidget);
+    expect(find.text('15.14700, 120.59200'), findsNWidgets(2));
+    expect(find.text('Water covers the crossing.'), findsOneWidget);
+    expect(find.text('reporter-test-id'), findsNothing);
+    expect(find.text('Demo reports'), findsNothing);
     expect(find.text('Add route'), findsOneWidget);
     expect(find.text('Report Flood'), findsOneWidget);
   });
@@ -139,8 +157,8 @@ void main() {
     expect(find.byType(FlutterMap), findsOneWidget);
     expect(find.byKey(const Key('route-start-marker')), findsOneWidget);
     expect(find.byKey(const Key('route-destination-marker')), findsOneWidget);
-    expect(find.byKey(const ValueKey('flood-marker-0')), findsOneWidget);
-    expect(find.byKey(const ValueKey('flood-marker-1')), findsOneWidget);
+    expect(find.byKey(const ValueKey('flood-marker-report-0')), findsOneWidget);
+    expect(find.byKey(const ValueKey('flood-marker-report-1')), findsOneWidget);
     expect(
       find.byKey(const Key('selected-route-warning-card')),
       findsOneWidget,
@@ -181,7 +199,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('No saved routes yet.'), findsOneWidget);
-    expect(find.text('No nearby flood reports.'), findsOneWidget);
+    expect(find.text('No flood reports yet.'), findsOneWidget);
     expect(find.byType(RouteCard), findsNothing);
     expect(find.byType(FloodReportEntry), findsNothing);
   });
@@ -192,7 +210,7 @@ void main() {
       final pending = Completer<List<SavedRoute>>();
       final service = FakeRouteService()..onFetch = (_) => pending.future;
       await tester.pumpWidget(_testApp(isGuest: false, routeService: service));
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.bySemanticsLabel('Loading saved routes'), findsOneWidget);
       expect(find.text('School route'), findsNothing);
       pending.completeError(Exception('private technical detail'));
       await tester.pump();
@@ -253,6 +271,102 @@ void main() {
         service.routes.single.destinationLongitude,
       );
       expect(find.text('My saved route'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'guest loads public reports with loading, error, retry and empty states',
+    (tester) async {
+      final pending = Completer<List<FloodReport>>();
+      final reports = FakeFloodReportService()..onFetch = () => pending.future;
+      final routes = FakeRouteService();
+      await tester.pumpWidget(
+        _testApp(
+          isGuest: true,
+          routeService: routes,
+          floodReportService: reports,
+        ),
+      );
+      expect(find.byKey(const Key('flood-reports-loading')), findsOneWidget);
+      expect(reports.fetchCalls, 1);
+      expect(routes.fetchCalls, 0);
+      pending.completeError(Exception('internal SQL data'));
+      await tester.pump();
+      await tester.ensureVisible(find.text('Retry flood reports'));
+      expect(
+        find.text('Could not load flood reports. Please try again.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('internal SQL'), findsNothing);
+      reports.onFetch = null;
+      await tester.tap(find.text('Retry flood reports'));
+      await tester.pump();
+      expect(find.text('No flood reports yet.'), findsOneWidget);
+      reports.reports = [exampleFloodReport()];
+      await tester.ensureVisible(find.byTooltip('Refresh flood reports'));
+      await tester.tap(find.byTooltip('Refresh flood reports'));
+      await tester.pump();
+      expect(find.byType(FloodReportEntry), findsOneWidget);
+      expect(find.text('Water covers the crossing.'), findsOneWidget);
+      expect(
+        tester
+            .widget<FloatingActionButton>(find.byType(FloatingActionButton))
+            .onPressed,
+        isNull,
+      );
+      expect(reports.submitCalls, 0);
+    },
+  );
+
+  testWidgets(
+    'successful report returns Home, refreshes entries and real map markers',
+    (tester) async {
+      usePhoneSize(tester);
+      final reports = FakeFloodReportService();
+      final routes = FakeRouteService()..routes = [exampleRoute()];
+      await tester.pumpWidget(
+        _testApp(
+          isGuest: false,
+          routeService: routes,
+          floodReportService: reports,
+        ),
+      );
+      await tester.pump();
+      await tester.tap(find.text('Report Flood'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ReportFloodScreen), findsOneWidget);
+      await fillFloodForm(tester);
+      await submitFloodForm(tester);
+      await tester.pumpAndSettle();
+      expect(find.byType(ReportFloodScreen), findsNothing);
+      expect(reports.submitCalls, 1);
+      expect(reports.fetchCalls, 2);
+      expect(routes.fetchCalls, 1);
+      expect(reports.lastDraft!.notes, '');
+      await tester.ensureVisible(find.text('Flood reports'));
+      expect(find.byType(FloodReportEntry), findsOneWidget);
+      expect(find.textContaining('Knee-deep'), findsOneWidget);
+      expect(find.text('user-a'), findsNothing);
+      expect(find.text('Status not assessed'), findsOneWidget);
+      await tester.tap(find.text('Map'));
+      await tester.pump();
+      expect(
+        find.byKey(const ValueKey('flood-marker-new-report')),
+        findsOneWidget,
+      );
+      final markers = tester
+          .widget<MarkerLayer>(find.byType(MarkerLayer))
+          .markers;
+      final reportMarker = markers.singleWhere(
+        (marker) =>
+            marker.child.key == const ValueKey('flood-marker-new-report'),
+      );
+      expect(reportMarker.point.latitude, reports.lastDraft!.latitude);
+      expect(reportMarker.point.longitude, reports.lastDraft!.longitude);
+      expect(find.text('Status not assessed'), findsOneWidget);
+      expect(find.text('SAFE'), findsNothing);
+      expect(find.text('WARNING'), findsNothing);
+      expect(tester.takeException(), isNull);
     },
   );
 }

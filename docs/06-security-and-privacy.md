@@ -2,7 +2,7 @@
 
 This repository is public. This document records the current security and privacy practices used by Bahantabay and will be updated as the backend and deployment are completed.
 
-**Last checked:** 2026-09-15 (Phase 9 client integration; Phase 8 deployment and RLS verification confirmed by project owner)
+**Last checked:** 2026-09-17 (Phase 10 client integration; Phase 8 RLS and Phase 9 live route flow confirmed by project owner)
 
 ## What this app stores
 
@@ -11,10 +11,10 @@ This repository is public. This document records the current security and privac
 | User authentication account and session | Supabase Authentication | The authenticated user; authentication is managed by Supabase |
 | Saved routes | Supabase PostgreSQL; Phase 9 client fetch/insert implemented | Authenticated owner, enforced by RLS |
 | Route start and destination coordinates | Supabase PostgreSQL | Same owner-only access as the saved route |
-| Community flood reports | Schema deployed; Flutter report persistence not yet implemented | Database allows public reads and authenticated owner inserts |
-| Flood location coordinates | Schema deployed; Flutter still shows demo markers | Publicly readable with the associated report once submitted |
-| Flood depth, road status, optional notes, and report time | Schema deployed; Flutter report persistence not yet implemented | Publicly readable with the associated report |
-| Guest demo routes and demo flood reports | Application source code | Anyone viewing the repository or app; fictional/sample data |
+| Community flood reports | Supabase PostgreSQL; Phase 10 client fetch/insert implemented | Public reads and authenticated owner inserts, enforced by RLS |
+| Flood location coordinates | Supabase PostgreSQL; shown in Home entries and map markers | Publicly readable with the associated report |
+| Flood depth, road status, optional notes, and report time | Supabase PostgreSQL; shown through FloodReportEntry | Publicly readable with the associated report |
+| Guest demo routes | Application source code, labelled as demo | Anyone viewing the repository or app; fictional/sample data |
 
 Flood-report photos are a stretch goal and are **not currently stored**. If implemented later, they will require a separate privacy and Supabase Storage access review before being enabled.
 
@@ -38,7 +38,7 @@ Bahantabay uses **Supabase Authentication** for user authentication.
 
 Supabase Row Level Security is defined in the Phase 8 migration for saved routes and community flood reports. The project owner confirms the migration was applied and RLS verification passed before Phase 9.
 
-**Current status as of 2026-09-15:** Flutter Add Route now inserts into `routes` through the existing Supabase client, and signed-in Home fetches that user's saved routes. Tests use injected fake services and do not prove a live end-to-end save. No database changes were needed for Phase 9. Flood reports remain demo data; Route Details and route-status calculation remain unfinished.
+**Current status as of 2026-09-17:** The project owner has manually verified Phase 9 against real Supabase: route creation, immediate Home refresh, persistence across browser refresh, map coordinates, session restoration, account switching, owner isolation between two accounts, and guest restrictions all passed. Phase 10 adds authenticated flood-report inserts and public reads through the same client. Its automated tests use injected fakes and a loopback HTTP backend; live Phase 10 submission is not yet manually verified. No schema changes were needed. Route Details and route-status calculation remain unfinished.
 
 The deployed migration defines the following access model:
 
@@ -51,7 +51,7 @@ The deployed migration defines the following access model:
 - Guest users cannot create or modify saved routes.
 - The route service checks the active session ID, filters reads by owner ID, and supplies that same ID on inserts for RLS validation. IDs and creation timestamps are left to database defaults.
 - Switching accounts/signing out discards the old Home state and open Add Route draft. Old asynchronous results cannot populate a new account's route list.
-- Guest Home keeps read-only demo routes and does not fetch private routes. Real saved routes display “Status not assessed”; demo reports/markers are explicitly labelled.
+- Guest Home keeps read-only demo routes and does not fetch private routes. Real saved routes display “Status not assessed”; flood observations do not change route status.
 
 ### Community flood reports
 
@@ -61,6 +61,11 @@ The deployed migration defines the following access model:
 - Flood reports are append-only for clients: neither `anon` nor `authenticated` has UPDATE or DELETE permissions, even for their own reports.
 - Public reads include reporter UUIDs and notes, but no Auth email or other profile information. Notes must not contain private information.
 - The app's guest flow uses `anon`, not Supabase anonymous sign-in; guests cannot submit reports. Supabase anonymous sign-in is not used and should remain disabled.
+- Phase 10 Home fetches the latest 100 public reports, newest first, for both guests and authenticated users. It replaces demo flood entries/markers, provides refresh/retry actions, and does not filter by distance or calculate route danger.
+- Report Flood requires a manually selected valid map coordinate, one of `ankle/knee/waist/chest`, and `passable/not_passable`. Notes are optional, with a 1,000-character client limit and a reminder that notes are public. The existing SQL text column has no added length constraint.
+- The submission service checks the active authenticated user and pins `reporter_id` to that user; RLS enforces ownership. IDs and timestamps remain database-generated. Pending submissions disable the form, failures preserve the draft, and successful submissions return to Home and reload reports.
+- Reporter UUIDs remain in the database model for ownership; the UI does not display reporter UUIDs, emails, names, or Auth details. No client report UPDATE/DELETE methods, photo upload, or Supabase Storage were added.
+- Account changes discard any open Report Flood draft with the existing account-scoped navigation. Public reports can appear across accounts by design; private route isolation is unchanged.
 
 Both tables use required Auth ownership foreign keys with `ON DELETE CASCADE`: deleting an Auth account removes its routes and reports. Client writes cannot override database-generated IDs/timestamps or transfer route ownership. No optional `profiles` table is needed for current functionality.
 
@@ -71,13 +76,15 @@ See [database setup and verification](../supabase/README.md) for the Phase 8 set
 - [x] `.env` is in `.gitignore`.
 - [x] `.env.example` exists for documenting the required environment-variable names without storing their real values.
 - [x] No `service_role` key is intentionally used by the Flutter client.
-- [x] Current route and flood-report demo data is fictional/sample data.
+- [x] Guest demo routes and automated report fixtures are fictional/sample data; Home flood data comes from Supabase.
 - [ ] Run and record the final repository-history secret scan: `git log -p | grep -i "api_key\|secret\|password\|token"` and verify that it finds no real secret.
 - [x] Supabase table definitions and RLS policies written in the Phase 8 migration.
 - [x] Migration applied to the intended Supabase project (confirmed by project owner before Phase 9).
 - [x] Supabase RLS role tests run successfully against the database (confirmed by project owner before Phase 9).
 - [x] Phase 9 route fetch/insert client integration and offline automated tests implemented.
-- [ ] Live end-to-end Phase 9 save/reload and account-isolation smoke test recorded.
+- [x] Live end-to-end Phase 9 save/reload and account-isolation smoke test recorded (project owner confirmation before Phase 10).
+- [x] Phase 10 authenticated report submission, public reads, and offline automated tests implemented.
+- [ ] Live end-to-end Phase 10 submit/reload/public-read smoke test recorded.
 - [ ] Review all final screenshots for real personal data.
 - [ ] Review the final demo video for real personal data.
 - [ ] Verify that no course or university credentials appear anywhere in the public repository.

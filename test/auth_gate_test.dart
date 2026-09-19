@@ -8,6 +8,10 @@ import 'package:bahantabay/features/authentication/data/auth_service.dart';
 import 'package:bahantabay/features/authentication/presentation/auth_gate.dart';
 import 'package:bahantabay/features/routes/data/route_service.dart';
 import 'support/fake_route_service.dart';
+import 'support/fake_flood_report_service.dart';
+import 'package:bahantabay/features/flood_reports/data/flood_report_service.dart';
+import 'package:bahantabay/features/flood_reports/presentation/screens/report_flood_screen.dart';
+import 'package:bahantabay/features/flood_reports/presentation/widgets/flood_report_entry.dart';
 
 class FakeAuthService implements AuthService {
   FakeAuthService({this.hasActiveSession = false, this.currentUserEmail});
@@ -63,14 +67,65 @@ class FakeAuthService implements AuthService {
   Future<void> dispose() => _sessionController.close();
 }
 
-Widget _testApp(AuthService? service, {RouteService? routes}) {
+Widget _testApp(
+  AuthService? service, {
+  RouteService? routes,
+  FloodReportService? reports,
+}) {
   return MaterialApp(
     theme: AppTheme.light,
-    home: AuthGate(authService: service, routeService: routes),
+    home: AuthGate(
+      authService: service,
+      routeService: routes,
+      floodReportService: reports,
+    ),
   );
 }
 
 void main() {
+  testWidgets(
+    'account change discards report draft while public reports remain readable',
+    (tester) async {
+      final auth = FakeAuthService(
+        hasActiveSession: true,
+        currentUserEmail: 'a@example.com',
+      );
+      addTearDown(auth.dispose);
+      final reports = FakeFloodReportService()
+        ..reports = [exampleFloodReport()];
+      final routes = FakeRouteService()
+        ..routes = [
+          exampleRoute(userId: 'a@example.com', name: 'A private route'),
+          exampleRoute(userId: 'b@example.com', name: 'B private route'),
+        ];
+      await tester.pumpWidget(_testApp(auth, routes: routes, reports: reports));
+      await tester.pumpAndSettle();
+      expect(find.text('A private route'), findsOneWidget);
+      await tester.tap(find.text('Report Flood'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ReportFloodScreen), findsOneWidget);
+      auth.changeAccount('b@example.com');
+      await tester.pumpAndSettle();
+      expect(find.byType(ReportFloodScreen), findsNothing);
+      expect(find.text('A private route'), findsNothing);
+      expect(find.text('B private route'), findsOneWidget);
+      expect(find.byType(FloodReportEntry), findsOneWidget);
+      auth.changeAccount(null);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Continue as Guest'));
+      await tester.tap(find.text('Continue as Guest'));
+      await tester.pumpAndSettle();
+      expect(find.text('B private route'), findsNothing);
+      expect(find.byType(FloodReportEntry), findsOneWidget);
+      expect(
+        tester
+            .widget<FloatingActionButton>(find.byType(FloatingActionButton))
+            .onPressed,
+        isNull,
+      );
+      expect(reports.submitCalls, 0);
+    },
+  );
   testWidgets('account change discards open draft and stale route response', (
     tester,
   ) async {

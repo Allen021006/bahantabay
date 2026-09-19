@@ -6,12 +6,14 @@ import 'app/bahantabay_app.dart';
 import 'core/config/app_config.dart';
 import 'features/authentication/data/auth_service.dart';
 import 'features/routes/data/route_service.dart';
+import 'features/flood_reports/data/flood_report_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   AuthService? authService;
   RouteService? routeService;
+  FloodReportService? floodReportService;
   if (AppConfig.hasSupabaseConfiguration) {
     await Supabase.initialize(
       url: AppConfig.supabaseUrl,
@@ -19,6 +21,7 @@ Future<void> main() async {
     );
     authService = SupabaseAuthService(Supabase.instance.client);
     routeService = SupabaseRouteService(Supabase.instance.client);
+    floodReportService = SupabaseFloodReportService(Supabase.instance.client);
   }
 
   runApp(
@@ -36,8 +39,11 @@ Future<void> main() async {
     // and set `enabled: !kReleaseMode`, which drops the frame in release builds.
     DevicePreview(
       enabled: true,
-      builder: (context) =>
-          BahantabayApp(authService: authService, routeService: routeService),
+      builder: (context) => BahantabayApp(
+        authService: authService,
+        routeService: routeService,
+        floodReportService: floodReportService,
+      ),
     ),
   );
 }

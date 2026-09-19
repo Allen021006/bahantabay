@@ -6,6 +6,9 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../flood_reports/domain/road_status.dart';
+import '../../../flood_reports/domain/flood_report.dart';
+import '../../../flood_reports/data/flood_report_service.dart';
+import '../../../flood_reports/presentation/screens/report_flood_screen.dart';
 import '../../../flood_reports/presentation/widgets/flood_report_entry.dart';
 import '../../../routes/domain/route_status.dart';
 import '../../../routes/domain/saved_route.dart';
@@ -27,6 +30,7 @@ class HomeScreen extends StatefulWidget {
     this.showDemoData = true,
     this.userId,
     this.routeService,
+    this.floodReportService,
   });
 
   final bool isGuest;
@@ -35,6 +39,7 @@ class HomeScreen extends StatefulWidget {
   final bool showDemoData;
   final String? userId;
   final RouteService? routeService;
+  final FloodReportService? floodReportService;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -44,21 +49,21 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _mapCenter = LatLng(15.1454, 120.5922);
   static const _routeStart = LatLng(15.1458, 120.5887);
   static const _routeDestination = LatLng(15.1450, 120.5957);
-  static const _floodReports = [
-    LatLng(15.1470, 120.5920),
-    LatLng(15.1437, 120.5905),
-  ];
-
   HomeView _selectedView = HomeView.list;
   List<SavedRoute> _routes = [];
   bool _loadingRoutes = false;
   String? _routeError;
   int _loadVersion = 0;
+  List<FloodReport> _reports = [];
+  bool _loadingReports = false;
+  String? _reportError;
+  int _reportLoadVersion = 0;
 
   @override
   void initState() {
     super.initState();
     _loadRoutes();
+    _loadReports();
   }
 
   @override
@@ -69,6 +74,109 @@ class _HomeScreenState extends State<HomeScreen> {
         oldWidget.routeService != widget.routeService) {
       _loadRoutes();
     }
+    if (oldWidget.floodReportService != widget.floodReportService ||
+        oldWidget.userId != widget.userId ||
+        oldWidget.isGuest != widget.isGuest) {
+      _loadReports();
+    }
+  }
+
+  Future<void> _loadReports() async {
+    final version = ++_reportLoadVersion;
+    setState(() {
+      _reports = [];
+      _reportError = null;
+      _loadingReports = true;
+    });
+    try {
+      final service = widget.floodReportService;
+      if (service == null) {
+        throw const FloodReportFailure(
+          'Flood reports are unavailable. Please try again later.',
+        );
+      }
+      final reports = await service.fetchReports();
+      if (!mounted || version != _reportLoadVersion) return;
+      setState(() => _reports = reports);
+    } catch (error) {
+      if (!mounted || version != _reportLoadVersion) return;
+      setState(
+        () => _reportError = error is FloodReportFailure
+            ? error.message
+            : 'Could not load flood reports. Please try again.',
+      );
+    } finally {
+      if (mounted && version == _reportLoadVersion) {
+        setState(() => _loadingReports = false);
+      }
+    }
+  }
+
+  Future<void> _openReportFlood() async {
+    if (widget.isGuest || widget.userId == null) return;
+    final submitted = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => ReportFloodScreen(
+          service: widget.floodReportService,
+          userId: widget.userId,
+        ),
+      ),
+    );
+    if (mounted && submitted == true) await _loadReports();
+  }
+
+  Widget _buildReports() {
+    if (_loadingReports) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(AppSpacing.md),
+          child: CircularProgressIndicator(
+            key: Key('flood-reports-loading'),
+            semanticsLabel: 'Loading flood reports',
+          ),
+        ),
+      );
+    }
+    if (_reportError != null) {
+      return Column(
+        children: [
+          Text(
+            _reportError!,
+            style: const TextStyle(color: AppColors.errorText),
+          ),
+          TextButton(
+            onPressed: _loadReports,
+            child: const Text('Retry flood reports'),
+          ),
+        ],
+      );
+    }
+    if (_reports.isEmpty) {
+      return const EmptyState(
+        message: 'No flood reports yet.',
+        icon: Icons.water_drop_outlined,
+      );
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Column(
+        children: [
+          for (var index = 0; index < _reports.length; index++) ...[
+            if (index > 0) const Divider(height: 1),
+            FloodReportEntry(
+              location: _coordinates(
+                _reports[index].latitude,
+                _reports[index].longitude,
+              ),
+              floodDepth: '${_reports[index].depth.label}-deep',
+              roadStatus: _reports[index].roadStatus,
+              notes: _reports[index].notes,
+              createdAt: _reports[index].createdAt,
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   Future<void> _loadRoutes() async {
@@ -173,12 +281,29 @@ class _HomeScreenState extends State<HomeScreen> {
           ? AppColors.floodBlue
           : AppColors.scaffoldBackground,
       appBar: AppBar(
-        title: Image.asset(
-          'docs/assets/Home Page Logo.png',
+        centerTitle: false,
+        title: SizedBox(
           width: 160,
           height: 48,
-          fit: BoxFit.contain,
-          alignment: Alignment.centerLeft,
+          child: FittedBox(
+            fit: BoxFit.contain,
+            alignment: Alignment.centerLeft,
+            // The square asset has transparent margins around the brand mark.
+            // Crop only those margins, then scale the whole mark uniformly.
+            child: ClipRect(
+              child: Align(
+                alignment: const Alignment(0.12, -0.075),
+                widthFactor: 0.82,
+                heightFactor: 0.28,
+                child: Image.asset(
+                  'docs/assets/Home Page Logo.png',
+                  width: 300,
+                  height: 300,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
         ),
         actions: [
           PopupMenuButton<_AccountAction>(
@@ -200,9 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: widget.isGuest
-            ? null
-            : () => _showLaterMessage('Report Flood'),
+        onPressed: widget.isGuest ? null : _openReportFlood,
         icon: const Icon(Icons.add),
         label: const Text('Report Flood'),
       ),
@@ -293,6 +416,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
+        if (widget.isGuest && widget.showDemoData)
+          Text('Demo routes', style: Theme.of(context).textTheme.labelSmall),
         if (!widget.isGuest) ...[
           if (_routes.isEmpty) _buildRouteState(),
           for (final route in _routes) ...[
@@ -336,49 +461,27 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         const SizedBox(height: AppSpacing.lg),
-        Text(
-          'Nearby flood reports',
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        if (widget.showDemoData)
-          Text('Demo reports', style: Theme.of(context).textTheme.labelSmall),
-        const SizedBox(height: AppSpacing.sm),
-        if (widget.showDemoData)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Material(
-              color: AppColors.surface,
-              child: Column(
-                children: [
-                  FloodReportEntry(
-                    location: 'Fiesta Community',
-                    floodDepth: 'Knee-deep',
-                    roadStatus: RoadStatus.notPassable,
-                    createdAt: DateTime.now().subtract(
-                      const Duration(minutes: 10),
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  FloodReportEntry(
-                    location: 'MacArthur Highway',
-                    floodDepth: 'Ankle-deep',
-                    roadStatus: RoadStatus.passable,
-                    createdAt: DateTime.now().subtract(
-                      const Duration(minutes: 25),
-                    ),
-                  ),
-                ],
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Flood reports',
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
             ),
-          )
-        else
-          const Material(
-            color: AppColors.surface,
-            child: EmptyState(
-              message: 'No nearby flood reports.',
-              icon: Icons.water_drop_outlined,
+            IconButton(
+              tooltip: 'Refresh flood reports',
+              onPressed: _loadingReports ? null : _loadReports,
+              icon: const Icon(Icons.refresh),
             ),
-          ),
+          ],
+        ),
+        Text(
+          'Latest 100 community reports • not filtered by distance',
+          style: Theme.of(context).textTheme.labelSmall,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _buildReports(),
       ],
     );
   }
@@ -399,9 +502,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return Stack(
       children: [
         FlutterMap(
-          key: ValueKey('home-map-${selected?.id ?? 'demo'}'),
+          key: ValueKey(
+            'home-map-${selected?.id ?? (showDemoRoute ? 'demo' : _reports.firstOrNull?.id ?? 'empty')}',
+          ),
           options: MapOptions(
-            initialCenter: _mapCenter,
+            initialCenter: start == null && _reports.isNotEmpty
+                ? LatLng(_reports.first.latitude, _reports.first.longitude)
+                : _mapCenter,
             initialZoom: 15.2,
             initialCameraFit: start == null || destination == null
                 ? null
@@ -459,18 +566,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: Icons.flag,
                     ),
                   ),
-                for (
-                  var index = 0;
-                  index < (widget.showDemoData ? _floodReports.length : 0);
-                  index++
-                )
+                for (final report in _reports)
                   Marker(
-                    point: _floodReports[index],
+                    point: LatLng(report.latitude, report.longitude),
                     width: 44,
                     height: 44,
                     child: _FloodMapMarker(
-                      key: ValueKey('flood-marker-$index'),
-                      number: index + 1,
+                      key: ValueKey('flood-marker-${report.id}'),
+                      report: report,
                     ),
                   ),
               ],
@@ -482,22 +585,38 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        if (widget.showDemoData)
-          Positioned(
-            top: AppSpacing.sm,
-            left: AppSpacing.sm,
-            child: Material(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(4),
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.xs),
-                child: Text(
-                  'Demo flood markers',
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
+        Positioned(
+          top: AppSpacing.sm,
+          left: AppSpacing.sm,
+          right: AppSpacing.sm,
+          child: Material(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(4),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.xs),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _loadingReports
+                          ? 'Loading flood reports...'
+                          : _reportError ??
+                                (_reports.isEmpty
+                                    ? 'No flood reports yet.'
+                                    : '${_reports.length} public flood reports'),
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Refresh flood reports',
+                    onPressed: _loadingReports ? null : _loadReports,
+                    icon: const Icon(Icons.refresh),
+                  ),
+                ],
               ),
             ),
           ),
+        ),
         Positioned(
           left: AppSpacing.lg,
           right: AppSpacing.lg,
@@ -536,7 +655,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    selected?.name ?? 'School route',
+                    selected?.name ?? 'School route (demo)',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   Text(
@@ -590,27 +709,39 @@ class _RoutePointMarker extends StatelessWidget {
 }
 
 class _FloodMapMarker extends StatelessWidget {
-  const _FloodMapMarker({super.key, required this.number});
+  const _FloodMapMarker({super.key, required this.report});
 
-  final int number;
+  final FloodReport report;
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: 'Flood report $number',
-      child: const DecoratedBox(
-        decoration: BoxDecoration(
-          color: AppColors.floodRed,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.ink,
-              blurRadius: 4,
-              offset: Offset(0, 2),
-            ),
-          ],
+    final label = '${report.depth.label}-deep • ${report.roadStatus.label}';
+    return Tooltip(
+      message: label,
+      child: Semantics(
+        label: label,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: report.roadStatus == RoadStatus.notPassable
+                ? AppColors.floodRed
+                : AppColors.warning,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.ink,
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Icon(
+            Icons.water_drop,
+            color: report.roadStatus == RoadStatus.notPassable
+                ? AppColors.surface
+                : AppColors.ink,
+            size: 24,
+          ),
         ),
-        child: Icon(Icons.water_drop, color: AppColors.surface, size: 24),
       ),
     );
   }
