@@ -2,7 +2,7 @@
 
 ## Overview
 
-Bahantabay is a community flood-monitoring app for commuters in Angeles City and nearby areas. Users can save private two-point routes and view community flood reports; authenticated reporting is implemented in the current working tree but awaits live backend verification. Route-specific warning calculation is planned and does not work yet.
+Bahantabay is a community flood-monitoring app for commuters in Angeles City and nearby areas. Users can save private two-point routes and view community flood reports; authenticated reporting is implemented and manually verified against live Supabase. Route-specific warning calculation is planned and does not work yet.
 
 **Demo link:** https://allen021006.github.io/bahantabay/ (production/authentication verification pending)
 
@@ -14,13 +14,13 @@ Bahantabay is a community flood-monitoring app for commuters in Angeles City and
 
 ## Current development status
 
-This README describes the local working tree as of **September 19, 2026**, including uncommitted Phase 10 work. A fresh clone or the deployed demo may not yet contain that work.
+Phase 10 is complete: implemented, automatically tested, manually verified against live Supabase, committed and pushed. Final production deployment verification remains pending.
 
 | Milestone | Status and evidence |
 | --- | --- |
 | Phase 8 — schema and RLS | Committed as `7be1770` on September 15, 2026. Applied and manually verified by the project owner. |
 | Phase 9 — route persistence | Committed as `3a913c8` on September 17, 2026. The owner verified real inserts, database rows, immediate Home refresh, browser-refresh persistence, map coordinates, Account A/B isolation, account switching and Guest read-only behavior. |
-| Phase 10 — Report Flood | Implemented but **uncommitted**: reporting form, authenticated inserts, public reads, Home entries/markers and automated tests. **Live Supabase manual verification is pending.** |
+| Phase 10 — Report Flood | Complete, committed and pushed as `1bc688d` — `feat: add community flood reporting`. The owner manually verified Account A submission, Home entries/map markers, expected database data and authenticated ownership, refresh persistence, Account B public reads with private-route isolation, and Guest reads with submission blocked. No raw Supabase/database errors were exposed during the verified flow. |
 
 The latest completed automated run reported **43 passing tests** and **no issues from `flutter analyze`**. These are previous implementation results, not a new run for this documentation update.
 
@@ -100,7 +100,7 @@ The locked MVP contains exactly five screens. Home List/Map are two states of **
 | **2. Home** | View private saved routes and public reports; switch List/Map. The account menu supports logout, account switching, or leaving Guest mode to sign in. Guests see labelled demo routes and cannot save routes or report floods. |
 | **3. Add Route** | Signed-in users enter a name, select start/destination points on the map, and save. Success returns to Home and refreshes routes. Supabase preserves each owner's private routes. |
 | **4. Route Details — planned** | Not implemented. Route-card taps and the map's View action show a placeholder message. |
-| **5. Report Flood — uncommitted** | Signed-in users select a map location, Ankle/Knee/Waist/Chest depth, Passable/Not passable, and optional notes. Successful submission returns to Home and reloads reports. Live verification remains pending. |
+| **5. Report Flood** | Signed-in users select a map location, Ankle/Knee/Waist/Chest depth, Passable/Not passable, and optional notes. Successful submission returns to Home and reloads reports. Live Supabase verification is complete. |
 
 Reporting validates required inputs, prevents duplicate presses while submitting, and preserves the draft on failure. Notes are public, have a 1,000-character client limit, and must not contain personal information. Home displays coordinates, depth, passability, notes and time without displaying reporter identities.
 
@@ -149,7 +149,7 @@ These captures show the actual current application: four implemented screens, in
 
 ![Report Flood runtime screenshot](docs/assets/runtime-report-flood.png)
 
-Report Flood is implemented in the current working tree, but live Supabase verification is still pending. This capture shows the form, not a verified backend submission.
+Report Flood is implemented and manually verified against live Supabase. This capture shows the form; backend verification was performed separately.
 
 Route Details is not included in the runtime captures because the screen is not implemented yet. Its runtime screenshot will be added after implementation.
 
@@ -169,10 +169,10 @@ Additional mockups: [Add Route](docs/assets/Add%20Route.png), [Route Details](do
 - No photo upload or Supabase Storage exists.
 - Home reads only the latest 100 reports, without distance filtering, pagination or automatic realtime updates.
 - Clients cannot edit/delete reports. Public API reads include reporter UUIDs and notes, even though the UI hides reporter identities.
-- Phase 10 live Supabase verification is pending. If connectivity drops during submission, check Home before retrying to avoid a duplicate.
+- If connectivity drops during submission, check Home before retrying to avoid a duplicate.
 - Final production deployment/authentication verification and presentation materials remain unfinished; Route Details will need a runtime screenshot after implementation.
 
-**Remaining MVP/submission work:** manually verify Phase 10; implement Route Details; implement route-status logic; verify integration/deployment; finish polish, screenshots, demo video and the security/privacy review.
+**Remaining MVP/submission work:** implement Route Details; implement route-status logic; verify integration/deployment; finish polish, screenshots, demo video and the security/privacy review.
 
 **Possible post-MVP improvements:** road-following geometry, a startup splash screen, advanced map/location controls, and optional report photos with a separate storage/privacy review. These are separate from remaining required MVP work.
 
