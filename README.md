@@ -1,157 +1,207 @@
 # Bahantabay
 
-Bahantabay is a community-based flood monitoring and route warning app designed to help users check flood conditions, monitor saved routes, and make safer travel decisions during flooding.
+## Overview
 
-**Live demo:** https://allen021006.github.io/bahantabay/  
-**Demo video:** Coming soon  
-**Course:** Applications Development and Emerging Technologies (6ADET), Holy Angel University  
+Bahantabay is a community flood-monitoring app for commuters in Angeles City and nearby areas. Users can save private two-point routes and view community flood reports; authenticated reporting is implemented in the current working tree but awaits live backend verification. Route-specific warning calculation is planned and does not work yet.
+
+**Demo link:** https://allen021006.github.io/bahantabay/ (production/authentication verification pending)
+
+**Demo video:** Coming soon
+
+**Course:** Applications Development and Emerging Technologies (6ADET), Holy Angel University
+
 **Author:** Allen David C. Panganiban
 
-This repository lives in the author's own GitHub account and is public on
-purpose. There is no `student.json` here and there should not be one: see
-`docs/06-security-and-privacy.md` for what a public repo means for secrets and
-personal data.
+## Current development status
 
----
+This README describes the local working tree as of **September 19, 2026**, including uncommitted Phase 10 work. A fresh clone or the deployed demo may not yet contain that work.
 
-## Screenshots
-
-The screenshots below show the current approved Bahantabay interface and mockup direction.
-
-| Sign In / Guest Entry | Home - List View | Home - Map View |
-| --- | --- | --- |
-| ![Sign In / Guest Entry](docs/assets/Sign%20In%20_%20Guest%20Entry.png) | ![Home - List View](docs/assets/Home%20-%20List%20View.png) | ![Home - Map View](docs/assets/Home%20-%20Map%20View.png) |
-
-Additional mockup screens are available under `docs/assets/` for Add Route, Route Details, and Report Flood.
-
-A repo without screenshots reads as abandoned, whatever the code says.
-
-## What it does
-
-- Lets users sign in, create an account, or continue as a guest.
-- Shows saved routes and nearby flood reports from a single Home screen.
-- Provides both List and Map views for route and flood information.
-- Lets users create routes using a selected start point and destination point.
-- Lets users report flood conditions and view route warnings based on nearby flood reports.
-
-## Built with
-
-| | |
+| Milestone | Status and evidence |
 | --- | --- |
-| Framework | Flutter (Dart) |
-| State | `setState` and simple local widget state |
-| Backend | Supabase |
-| Authentication | Supabase Auth |
-| Database | Supabase PostgreSQL |
-| Maps | `flutter_map` with OpenStreetMap |
-| Coordinates | `latlong2` |
-| UI Preview | `device_preview` |
-| Design | Material 3 |
+| Phase 8 — schema and RLS | Committed as `7be1770` on September 15, 2026. Applied and manually verified by the project owner. |
+| Phase 9 — route persistence | Committed as `3a913c8` on September 17, 2026. The owner verified real inserts, database rows, immediate Home refresh, browser-refresh persistence, map coordinates, Account A/B isolation, account switching and Guest read-only behavior. |
+| Phase 10 — Report Flood | Implemented but **uncommitted**: reporting form, authenticated inserts, public reads, Home entries/markers and automated tests. **Live Supabase manual verification is pending.** |
 
-The project intentionally keeps its state management and architecture beginner-friendly and avoids unnecessary frameworks or abstractions.
+The latest completed automated run reported **43 passing tests** and **no issues from `flutter analyze`**. These are previous implementation results, not a new run for this documentation update.
 
-## Running it yourself
+## Setup and installation
 
-```bash
+### 1. Install the tools
+
+Use **Flutter 3.44.2 stable**, including **Dart 3.12.2**, plus Git and a modern browser. These versions were confirmed from the installed SDK metadata during this update. Add Flutter's `bin` directory to PATH; check the installation with `flutter --version` and `flutter doctor`.
+
+`pubspec.yaml` declares Dart `^3.8.0`, but the current lockfile requires **Dart >=3.12.0 <4.0.0 and Flutter >=3.44.0**. The broader manifest constraint is not the tested development environment; use the versions above to reproduce it.
+
+### 2. Clone and install dependencies
+
+```sh
+git clone https://github.com/Allen021006/bahantabay.git
+cd bahantabay
 flutter pub get
-cp .env.example .env      
+```
+
+The stack uses Material 3, simple widget state, Supabase Auth/PostgreSQL, `flutter_map`, OpenStreetMap, `latlong2` and `device_preview`. Exact package versions are in [pubspec.lock](pubspec.lock).
+
+### 3. Configure Supabase
+
+Create or use a Supabase project with email/password authentication enabled. For a **new database**, follow the preflight, apply-once migration and RLS tests in [database setup](supabase/README.md). The existing project database has already been applied and verified: **do not rerun its initial migration**. That guide's original “not applied” status predates the owner confirmation in [Security and privacy](docs/06-security-and-privacy.md).
+
+The schema contains private `routes` and publicly readable `flood_reports`. RLS restricts routes to their owners and report creation to the authenticated reporter. Client report updates/deletes are prohibited. Supabase anonymous sign-in is not used and should remain disabled. If sign-up returns no active session, the app asks the user to confirm their email before signing in.
+
+### 4. Configure the local app
+
+Copy [.env.example](.env.example) to `.env`:
+
+- PowerShell: `Copy-Item .env.example .env`
+- macOS/Linux: `cp .env.example .env`
+
+Replace the placeholders locally using your Supabase dashboard:
+
+```dotenv
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+```
+
+| Variable | Purpose | Source |
+| --- | --- | --- |
+| `SUPABASE_URL` | Project API URL | Supabase project dashboard |
+| `SUPABASE_PUBLISHABLE_KEY` | Client-safe publishable key | Supabase API Keys settings |
+
+`.env` is ignored by Git. `--dart-define-from-file=.env` passes **compile-time definitions** read by `String.fromEnvironment`; the app does not dynamically load `.env`. Stop and rerun after changing configuration.
+
+Never supply a secret/service-role key, database password or private account credentials. The publishable key is visible in a web build; **RLS enforces authorization**, not secrecy of client configuration.
+
+## How to run it
+
+From the repository directory, after configuring `.env`:
+
+```sh
 flutter run -d web-server --web-port 8080 --dart-define-from-file=.env
 ```
 
-Then open http://localhost:8080. Requires Flutter (run `flutter --version` and
-put yours here).
+Open **http://localhost:8080**. Expect Sign In / Guest Entry inside DevicePreview, or Home if an authenticated session is restored. Keep the terminal running. Guest entry creates no Supabase account, but real public report reads still require valid backend configuration and connectivity.
 
-### Environment variables
+Development checks:
 
-This project reads its local configuration from a .env file that is intentionally excluded from Git.
+```sh
+flutter analyze
+flutter test
+```
 
-| Variable | What it is | Where to get one |
-| `SUPABASE_URL` | URL of the Supabase project used by the app | Supabase project dashboard |
-| `SUPABASE_PUBLISHABLE_KEY` | Client-safe publishable key used by the Flutter app | Supabase API Keys settings |
+Automated tests use test doubles/local fixtures without live Supabase credentials. They do not replace manual backend verification.
 
-The application reads these values at build/start time using:
---dart-define-from-file=.env
+## Features and usage
 
-## Privacy and secrets
+The locked MVP contains exactly five screens. Home List/Map are two states of **one Home screen**, Sign Up is an authentication mode, and the account menu is an overlay.
 
-- Bahantabay uses Supabase for authentication and backend services. Authentication information is handled by Supabase, while route and flood-report data will be protected using Supabase Row Level Security policies.
-- Local configuration is stored in the ignored .env file. The deployed GitHub Pages build receives the client-safe Supabase configuration through GitHub repository secrets.
-- The public repository, sample data, screenshots, and demo materials must not contain student numbers, private messages, faces, secret credentials, or other unnecessary personal information.
-See docs/06-security-and-privacy.md for the full project checklist.
+| Screen | Current use |
+| --- | --- |
+| **1. Sign In / Guest Entry** | Sign in with email/password, switch to Sign Up on the same screen, or continue as Guest. |
+| **2. Home** | View private saved routes and public reports; switch List/Map. The account menu supports logout, account switching, or leaving Guest mode to sign in. Guests see labelled demo routes and cannot save routes or report floods. |
+| **3. Add Route** | Signed-in users enter a name, select start/destination points on the map, and save. Success returns to Home and refreshes routes. Supabase preserves each owner's private routes. |
+| **4. Route Details — planned** | Not implemented. Route-card taps and the map's View action show a placeholder message. |
+| **5. Report Flood — uncommitted** | Signed-in users select a map location, Ankle/Knee/Waist/Chest depth, Passable/Not passable, and optional notes. Successful submission returns to Home and reloads reports. Live verification remains pending. |
+
+Reporting validates required inputs, prevents duplicate presses while submitting, and preserves the draft on failure. Notes are public, have a 1,000-character client limit, and must not contain personal information. Home displays coordinates, depth, passability, notes and time without displaying reporter identities.
+
+Home loads the **latest 100 public reports**, newest first, with loading, empty, error/retry and refresh states. There is **no geographic distance filtering**. Report markers show locations; real saved routes display **“Status not assessed”** and are not evaluated against reports.
+
+## Project structure
+
+```text
+lib/main.dart                 Supabase initialization and DevicePreview
+lib/app/                      Application widget and theme wiring
+lib/core/                     Configuration, theme, spacing and shared widgets
+lib/features/authentication/  Auth service, session gate and Sign In/Sign Up UI
+lib/features/home/            Single Home screen with List and Map states
+lib/features/routes/          Models/service, Add Route and route widgets
+lib/features/flood_reports/   Models/service, Report Flood and entry widget
+supabase/                     SQL migration, RLS tests and setup guide
+test/                         Model, service and widget tests; test helpers
+docs/                         Proposal, mockups, design and progress records
+docs/assets/                  Design assets; future runtime captures
+.github/workflows/            GitHub Pages build/deployment
+```
+
+Route Details has no implemented screen yet. The unused course starter remains under `lib/features/starter/`.
+
+## Screenshots
+
+### Runtime screenshots
+
+These captures show the actual current application: four implemented screens, including both presentation states of Home. They are runtime UI evidence, not proof of successful backend operations.
+
+#### Sign In / Guest Entry
+
+![Sign In / Guest Entry runtime screenshot](docs/assets/runtime-sign-in.png)
+
+#### Home
+
+| List | Map |
+| --- | --- |
+| ![Home List runtime screenshot](docs/assets/runtime-home-list.png) | ![Home Map runtime screenshot](docs/assets/runtime-home-map.png) |
+
+#### Add Route
+
+![Add Route runtime screenshot](docs/assets/runtime-add-route.png)
+
+#### Report Flood
+
+![Report Flood runtime screenshot](docs/assets/runtime-report-flood.png)
+
+Report Flood is implemented in the current working tree, but live Supabase verification is still pending. This capture shows the form, not a verified backend submission.
+
+Route Details is not included in the runtime captures because the screen is not implemented yet. Its runtime screenshot will be added after implementation.
+
+### Approved design mockups — not runtime evidence
+
+| Sign In / Guest Entry | Home — List | Home — Map |
+| --- | --- | --- |
+| ![Sign In mockup](docs/assets/Sign%20In%20_%20Guest%20Entry.png) | ![Home List mockup](docs/assets/Home%20-%20List%20View.png) | ![Home Map mockup](docs/assets/Home%20-%20Map%20View.png) |
+
+Additional mockups: [Add Route](docs/assets/Add%20Route.png), [Route Details](docs/assets/Route%20Details.png), and [Report Flood](docs/assets/Report%20Flood.png). These show design intent, not proof that all features work.
+
+## Known issues and next steps
+
+- Route Details and route-status calculation are not implemented; saved routes show “Status not assessed.”
+- Routes use a straight two-point line, not road-following geometry or navigation.
+- No geocoding or device-location integration exists; select locations manually.
+- No photo upload or Supabase Storage exists.
+- Home reads only the latest 100 reports, without distance filtering, pagination or automatic realtime updates.
+- Clients cannot edit/delete reports. Public API reads include reporter UUIDs and notes, even though the UI hides reporter identities.
+- Phase 10 live Supabase verification is pending. If connectivity drops during submission, check Home before retrying to avoid a duplicate.
+- Final production deployment/authentication verification and presentation materials remain unfinished; Route Details will need a runtime screenshot after implementation.
+
+**Remaining MVP/submission work:** manually verify Phase 10; implement Route Details; implement route-status logic; verify integration/deployment; finish polish, screenshots, demo video and the security/privacy review.
+
+**Possible post-MVP improvements:** road-following geometry, a startup splash screen, advanced map/location controls, and optional report photos with a separate storage/privacy review. These are separate from remaining required MVP work.
+
+## Deployment and privacy
+
+The [Pages workflow](.github/workflows/deploy-web.yml) runs on pushes to `main` or manual dispatch. Set Pages to **GitHub Actions** and add repository secrets `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`. The workflow supplies `--dart-define` values and the repository base path; it does not upload `.env`.
+
+Analysis/test failures currently do not block deployment. Verify the build, configuration and Supabase production authentication URL settings before treating the demo as verified. DevicePreview remains enabled in deployed builds.
+
+Do not commit `.env`, privileged keys, passwords or private user data. See [Security and privacy](docs/06-security-and-privacy.md) for access rules and outstanding checks.
 
 ## Project documentation
 
-| Document | |
+| Document | Purpose |
 | --- | --- |
-| [Proposal](docs/01-proposal.md) | the problem, the users, the scope |
-| [Mockup and wireframes](docs/02-mockup.md) | what it looks like, and the screen flow |
-| [Design system](docs/03-design-system.md) | colors, type, spacing, components |
-| [Weekly reports](docs/04-weekly-reports.md) | what happened each week |
-| [Demo video](docs/05-demo-video.md) | the recording and what it shows |
-| [Start here](START-HERE.md) | how this repo works (delete once you have read it) |
-| [Security and privacy](docs/06-security-and-privacy.md) | the checklist, filled in |
+| [Proposal](docs/01-proposal.md) | Problem, users and approved scope |
+| [Mockup and wireframes](docs/02-mockup.md) | Five-screen design and planned flow |
+| [Design system](docs/03-design-system.md) | Colors, typography, spacing and components |
+| [Weekly reports](docs/04-weekly-reports.md) | Recorded development progress |
+| [Demo video](docs/05-demo-video.md) | Recording plan; final video pending |
+| [Security and privacy](docs/06-security-and-privacy.md) | Data access and verification checklist |
+| [Database setup](supabase/README.md) | Apply-once migration and RLS verification |
 
-## Status and what is next
+## Credits and AI use
 
-Bahantabay is currently under active development.
+Built with Flutter, Supabase, `supabase_flutter`, `flutter_map`, OpenStreetMap, `latlong2` and `device_preview`. Versions are recorded in [pubspec.yaml](pubspec.yaml) and [pubspec.lock](pubspec.lock). Project logos, mockups and design assets are in `docs/assets/`; maps display OpenStreetMap contributor attribution.
 
-Completed
-- Flutter project foundation and repository structure
-- Material 3 design system
-- reusable UI components
-- Sign In / Guest Entry interface
-- same-screen Sign Up mode
-- Supabase email/password authentication
-- authenticated-session restoration
-- guest mode
-- Home List View
-- Home Map View
-- OpenStreetMap integration
-- demo route and flood markers
-- straight two-point route visualization
-- automated Flutter widget tests
-  
-In progress / next
-- Add Route screen
-- Supabase database schema
-- Row Level Security policies
-- route persistence
-- Report Flood screen
-- flood-report persistence
-- Route Details screen
-- route flood-status calculation
-- final loading, error, and empty states
-- GitHub Pages production authentication configuration
-- final documentation
-- final screenshots
-- demo video
-- final security and privacy review
-  
-The MVP intentionally does not include road-following navigation, turn-by-turn directions, photo upload, or other stretch features unless they are added after the approved core requirements are complete.
-
-## Credits
-
-Packages and services
-- Flutter — application framework
-- Supabase — authentication and backend services
-- supabase_flutter — Supabase integration for Flutter
-- flutter_map — interactive map rendering
-- OpenStreetMap — map tile data
-- latlong2 — latitude/longitude coordinate support
-- device_preview — responsive device preview during development
-  
-Package versions are listed in pubspec.yaml and pubspec.lock.
-
-Visual assets
-Bahantabay's logo, mockups, and design-system assets were created specifically for this project and are stored under docs/assets/.
-OpenStreetMap map tiles and geographic data are used according to OpenStreetMap attribution and usage requirements.
-
-## AI use
-
-AI tools, including ChatGPT and Claude, were used during development for planning, code assistance, debugging, explanation, testing support, and implementation guidance.
-
-AI-generated suggestions were reviewed, tested, and adjusted to follow the approved project proposal, mockups, design system, course requirements, and security rules. The project owner remains responsible for understanding and maintaining the submitted code.
+AI tools, including ChatGPT and Claude, assisted with planning, code, debugging, explanations and testing. Suggestions were reviewed and adjusted against the approved scope and design; the project owner remains responsible for understanding and maintaining the code.
 
 ## Licence
 
-MIT, see [LICENSE](LICENSE). Change it if you want different terms.
+MIT; see [LICENSE](LICENSE).
