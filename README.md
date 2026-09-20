@@ -8,10 +8,6 @@ Bahantabay is a community flood-monitoring app for commuters in Angeles City and
 
 **Demo video:** Coming soon
 
-**Course:** Applications Development and Emerging Technologies (6ADET), Holy Angel University
-
-**Author:** Allen David C. Panganiban
-
 ## Current development status
 
 Phase 10 is complete: implemented, automatically tested, manually verified against live Supabase, committed and pushed. Final production deployment verification remains pending.
@@ -44,7 +40,7 @@ The stack uses Material 3, simple widget state, Supabase Auth/PostgreSQL, `flutt
 
 ### 3. Configure Supabase
 
-Create or use a Supabase project with email/password authentication enabled. For a **new database**, follow the preflight, apply-once migration and RLS tests in [database setup](supabase/README.md). The existing project database has already been applied and verified: **do not rerun its initial migration**. That guide's original “not applied” status predates the owner confirmation in [Security and privacy](docs/06-security-and-privacy.md).
+Create or use a Supabase project with email/password authentication enabled. For a **new database**, follow the preflight, apply-once migration and RLS tests in [database setup](supabase/README.md). The existing project database has already been applied and verified: **do not rerun its initial migration**.
 
 The schema contains private `routes` and publicly readable `flood_reports`. RLS restricts routes to their owners and report creation to the authenticated reporter. Client report updates/deletes are prohibited. Supabase anonymous sign-in is not used and should remain disabled. If sign-up returns no active session, the app asks the user to confirm their email before signing in.
 
@@ -119,7 +115,7 @@ lib/features/flood_reports/   Models/service, Report Flood and entry widget
 supabase/                     SQL migration, RLS tests and setup guide
 test/                         Model, service and widget tests; test helpers
 docs/                         Proposal, mockups, design and progress records
-docs/assets/                  Design assets; future runtime captures
+docs/assets/                  Design assets, mockups and current runtime captures
 .github/workflows/            GitHub Pages build/deployment
 ```
 
@@ -182,7 +178,7 @@ The [Pages workflow](.github/workflows/deploy-web.yml) runs on pushes to `main` 
 
 Analysis/test failures currently do not block deployment. Verify the build, configuration and Supabase production authentication URL settings before treating the demo as verified. DevicePreview remains enabled in deployed builds.
 
-Do not commit `.env`, privileged keys, passwords or private user data. See [Security and privacy](docs/06-security-and-privacy.md) for access rules and outstanding checks.
+Do not commit `.env`, privileged keys, passwords, personal information or private user data. See [Security and privacy](docs/06-security-and-privacy.md) for access rules and outstanding checks.
 
 ## Project documentation
 
@@ -201,6 +197,8 @@ Do not commit `.env`, privileged keys, passwords or private user data. See [Secu
 Built with Flutter, Supabase, `supabase_flutter`, `flutter_map`, OpenStreetMap, `latlong2` and `device_preview`. Versions are recorded in [pubspec.yaml](pubspec.yaml) and [pubspec.lock](pubspec.lock). Project logos, mockups and design assets are in `docs/assets/`; maps display OpenStreetMap contributor attribution.
 
 AI tools, including ChatGPT and Claude, assisted with planning, code, debugging, explanations and testing. Suggestions were reviewed and adjusted against the approved scope and design; the project owner remains responsible for understanding and maintaining the code.
+
+A detailed record of AI-assisted development will be maintained in `AI-USAGE.md` as part of the Finals Builds with Flutter and AI badge requirement.
 
 ## Licence
 
