@@ -1,4 +1,5 @@
 # Bahantabay
+[![Made with AI](https://img.shields.io/badge/Made_with-AI_assistance-blue)](AI-USAGE.md)
 
 ## Overview
 
@@ -194,11 +195,13 @@ Do not commit `.env`, privileged keys, passwords, personal information or privat
 
 ## Credits and AI use
 
+## Credits and AI use
+
 Built with Flutter, Supabase, `supabase_flutter`, `flutter_map`, OpenStreetMap, `latlong2` and `device_preview`. Versions are recorded in [pubspec.yaml](pubspec.yaml) and [pubspec.lock](pubspec.lock). Project logos, mockups and design assets are in `docs/assets/`; maps display OpenStreetMap contributor attribution.
 
-AI tools, including ChatGPT and Claude, assisted with planning, code, debugging, explanations and testing. Suggestions were reviewed and adjusted against the approved scope and design; the project owner remains responsible for understanding and maintaining the code.
+AI assistance included **ChatGPT, Claude, and Codex**, with the amount of assistance varying by feature. AI was used for planning, architecture, implementation assistance, debugging, explanations, testing and documentation; substantial AI-generated code is disclosed rather than presented as independently written.
 
-A detailed record of AI-assisted development will be maintained in `AI-USAGE.md` as part of the Finals Builds with Flutter and AI badge requirement.
+See **[AI-USAGE.md](AI-USAGE.md)** for the detailed development record, corrections to AI-generated output, commit evidence, and authorship breakdown.
 
 ## Licence
 
