@@ -14,6 +14,7 @@ import '../../../routes/domain/route_status.dart';
 import '../../../routes/domain/saved_route.dart';
 import '../../../routes/data/route_service.dart';
 import '../../../routes/presentation/screens/add_route_screen.dart';
+import '../../../routes/presentation/screens/route_details_screen.dart';
 import '../../../routes/presentation/widgets/route_card.dart';
 import '../../../routes/presentation/widgets/status_badge.dart';
 
@@ -228,6 +229,13 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted && saved == true) await _loadRoutes();
   }
 
+  void _openRouteDetails(SavedRoute route) {
+    if (widget.isGuest || route.userId != widget.userId) return;
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(builder: (_) => RouteDetailsScreen(route: route)),
+    );
+  }
+
   String _coordinates(double latitude, double longitude) =>
       '${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}';
 
@@ -432,7 +440,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 route.destinationLongitude,
               ),
               status: null,
-              onTap: () => _showLaterMessage('Route Details'),
+              onTap: () => _openRouteDetails(route),
             ),
             const SizedBox(height: AppSpacing.sm),
           ],
@@ -670,7 +678,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             TextButton(
-              onPressed: () => _showLaterMessage('Route Details'),
+              onPressed: () => selected == null
+                  ? _showLaterMessage('Route Details')
+                  : _openRouteDetails(selected),
               child: const Text('View'),
             ),
           ],

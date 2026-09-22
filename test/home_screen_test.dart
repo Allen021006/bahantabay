@@ -16,6 +16,7 @@ import 'package:bahantabay/features/flood_reports/presentation/widgets/flood_rep
 import 'package:bahantabay/features/home/presentation/screens/home_screen.dart';
 import 'package:bahantabay/features/routes/presentation/widgets/route_card.dart';
 import 'package:bahantabay/features/routes/presentation/screens/add_route_screen.dart';
+import 'package:bahantabay/features/routes/presentation/screens/route_details_screen.dart';
 
 Widget _testApp({
   required bool isGuest,
@@ -53,6 +54,85 @@ Widget _testApp({
 }
 
 void main() {
+  for (final index in [0, 1]) {
+    testWidgets('List opens exact saved route $index and Back keeps Home', (
+      tester,
+    ) async {
+      final service = FakeRouteService()
+        ..routes = [exampleRoute(), exampleRoute(name: 'Work route')];
+      await tester.pumpWidget(_testApp(isGuest: false, routeService: service));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(RouteCard).at(index));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<RouteDetailsScreen>(find.byType(RouteDetailsScreen))
+            .route,
+        same(service.routes[index]),
+      );
+      expect(find.text(service.routes[index].name), findsOneWidget);
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      expect(find.text('Saved routes'), findsOneWidget);
+      expect(find.byType(RouteDetailsScreen), findsNothing);
+      expect(service.fetchCalls, 1);
+      expect(service.saveCalls, 0);
+    });
+  }
+
+  testWidgets('Map View opens its exact route and Back preserves Map', (
+    tester,
+  ) async {
+    final service = FakeRouteService()
+      ..routes = [exampleRoute(), exampleRoute(name: 'Work route')];
+    await tester.pumpWidget(_testApp(isGuest: false, routeService: service));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Map'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('View'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<RouteDetailsScreen>(find.byType(RouteDetailsScreen)).route,
+      same(service.routes.first),
+    );
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.byType(RouteDetailsScreen), findsNothing);
+    expect(
+      tester
+          .widget<SegmentedButton<HomeView>>(
+            find.byType(SegmentedButton<HomeView>),
+          )
+          .selected,
+      {HomeView.map},
+    );
+    expect(find.byType(FlutterMap), findsOneWidget);
+    expect(service.fetchCalls, 1);
+    expect(service.saveCalls, 0);
+  });
+
+  testWidgets('guest demo List and Map do not open private Details', (
+    tester,
+  ) async {
+    final service = FakeRouteService();
+    await tester.pumpWidget(_testApp(isGuest: true, routeService: service));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(RouteCard).first);
+    await tester.pumpAndSettle();
+    expect(find.byType(RouteDetailsScreen), findsNothing);
+    expect(
+      find.text('Route Details will be connected in a later phase.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Map'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('View'));
+    await tester.pumpAndSettle();
+    expect(find.byType(RouteDetailsScreen), findsNothing);
+    expect(service.fetchCalls, 0);
+    expect(service.saveCalls, 0);
+  });
+
   testWidgets('signed-in user opens Add Route and returns without saving', (
     tester,
   ) async {
