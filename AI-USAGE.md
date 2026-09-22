@@ -359,7 +359,31 @@ I also understand why account isolation cannot depend only on Flutter filtering.
 
 I manually tested this with separate accounts and Guest mode to verify that persistence and isolation worked in the real backend.
 
-Because this phase included both AI guidance and my own implementation, I describe it as my strongest existing self-authored area rather than claiming that every line in the Phase 9 commit was independently written without AI.
+Because this phase included both AI guidance and my own implementation, I describe it as one of my strongest existing self-authored areas rather than claiming that every line in the Phase 9 commit was independently written without AI.
+
+---
+
+### Route Details
+
+**Primary file:**
+
+`lib/features/routes/presentation/screens/route_details_screen.dart`
+
+**Related commit:** `862d772` — `feat: add route details`
+
+https://github.com/Allen021006/bahantabay/commit/862d772
+
+### What I wrote and understand
+
+I personally wrote this file manually and incrementally. AI did not generate the Route Details screen. It is one of my strongest current examples of personally written Flutter code, with ChatGPT providing teaching, requirements breakdown, incremental review, and debugging guidance rather than a finished implementation to copy.
+
+I implemented `RouteDetailsScreen` as a `StatelessWidget` with a required `SavedRoute`. It displays the real saved route name, start and destination coordinates, and the neutral text "Status not assessed." I used `SingleChildScrollView` so the content can scroll when it does not fit the available height.
+
+I converted the persisted coordinates into `LatLng` endpoints and built a bounded, embedded `FlutterMap`. I implemented camera fitting using both endpoints, an OpenStreetMap `TileLayer`, a dashed two-point `PolylineLayer`, Start and Destination markers in a `MarkerLayer`, and OpenStreetMap attribution. I also wrote the helper methods for map construction and endpoint markers and reused the existing `AppColors` and `AppSpacing` design system.
+
+I built it this way because Details presents route data that Home has already loaded. The screen does not need a database write or another route query. The straight line represents the MVP's two saved points, not road-following directions. "Status not assessed" deliberately avoids claiming a flood assessment before Phase 12 implements that logic.
+
+Codex later reviewed this file and found no necessary corrective edit. The file remained byte-for-byte unchanged during that review and integration pass. Codex authored the surrounding Home navigation and automated tests after my screen implementation was complete. I therefore claim authorship of `route_details_screen.dart`, not the entire `862d772` commit.
 
 ---
 
@@ -431,9 +455,9 @@ Codex has been the main implementation assistant. ChatGPT has primarily assisted
 
 I do not claim that Git commits authored under my Git account prove that I personally wrote every line in those commits.
 
-My strongest existing areas of more independent implementation are the authentication UI and route-persistence work. Database/RLS work was collaborative, while Add Route and community flood reporting involved heavier Codex implementation.
+My strongest existing areas of more independent implementation are the authentication UI, route-persistence work, and the personally written Route Details screen. Database/RLS work was collaborative, while Add Route and community flood reporting involved heavier Codex implementation. The Route Details screen is mine, with ChatGPT teaching and review; the surrounding Home integration and tests in the same Phase 11 commit were authored by Codex.
 
-The remaining Route Details and route-status phases will provide additional opportunities for me to write meaningful Flutter/Dart logic myself and document it here as it is developed.
+Phase 11 is now implemented, tested, manually verified, and committed. The remaining route-status phase will provide an additional opportunity for me to write meaningful Dart logic myself and document it here as it is developed. These authorship records do not by themselves establish that the M8A9 20% requirement has been reached.
 
 I will not count future work as self-authored until I have actually written, tested, and committed it.
 
@@ -501,9 +525,54 @@ The following sections will be updated as Bahantabay development continues.
 
 ## Phase 11 — Route Details
 
-**Status:** Not started at the time of this baseline.
+**Date:** September 20–22, 2026
 
-AI assistance and personally written portions will be documented after implementation.
+**Tools:** ChatGPT and Codex
+
+**Status:** Complete — implemented, automatically tested, manually verified, and committed.
+
+### What I asked AI to help with
+
+I asked ChatGPT to explain the Phase 11 requirements and break the work into manageable steps while leaving the actual Route Details implementation for me to write. It explained required `SavedRoute` input, scroll-safe layout, `LatLng` endpoint conversion, bounded map layout, camera fitting, and the separation between Phase 11 presentation and Phase 12 route assessment.
+
+ChatGPT reviewed my code after each increment and provided explanations and debugging guidance. It deliberately avoided giving me a finished screen to copy and directed me to inspect the existing Add Route/Home map patterns and implement the corresponding ideas myself.
+
+After I completed the screen, I asked Codex to review it without replacing or rewriting it, connect it to Home, and add automated tests.
+
+### What AI returned
+
+Codex reported that my screen worked with the installed `flutter_map` version and correctly inherited Scaffold/AppBar styling from the existing theme. Its tests covered long names, safe map construction with identical and very-close endpoints, and labelled endpoints that did not rely only on color. No corrective edit was necessary: `route_details_screen.dart` remained byte-for-byte unchanged.
+
+Codex then authored the integration and tests in:
+
+- `lib/features/home/presentation/screens/home_screen.dart`;
+- `test/home_screen_test.dart`;
+- `test/auth_gate_test.dart`;
+- `test/route_details_screen_test.dart`.
+
+This connected authenticated Home List cards and Home Map's View action to Details using the exact selected `SavedRoute`, preserved Back behavior, and kept Guest demo routes outside the private persisted-route Details flow. The tests covered route data and map rendering, List/Map navigation, and account/session isolation.
+
+### What I kept, changed, and why
+
+I kept my personally written screen unchanged and accepted the surrounding integration and tests after reviewing and testing them. The authorship boundary is explicit: `route_details_screen.dart` is Allen-authored; ChatGPT's teaching and incremental review are AI assistance; the Home integration and automated tests are Codex-authored work completed after my screen was already implemented.
+
+I kept "Status not assessed" and the two-point straight-line route. No database writes, report-to-route matching, route-status calculation, or status aggregation were added to Details.
+
+### Testing and manual verification
+
+After I completed the screen, `flutter analyze` reported no issues and the 43 existing tests passed. After Codex added the integration and tests, analysis remained clean, all 54 tests passed, and `git diff --check` passed. The global formatting check reported only a pre-existing unrelated discrepancy in `lib/features/routes/domain/saved_route.dart`, which was deliberately left untouched.
+
+I then manually verified normal sign-in and existing route/report loading, correct Details data for different saved routes from Home List, and the correct route from Home Map's View action. I checked Back behavior in both Home states and confirmed that the layout, map, markers, dashed line, and attribution rendered correctly.
+
+I also verified that Guest mode did not expose private Details and that Account A's private Details did not survive logout/account switching. Details continued to show only "Status not assessed," with no Phase 12 matching or status aggregation introduced.
+
+### Commit evidence
+
+`862d772` — `feat: add route details`
+
+https://github.com/Allen021006/bahantabay/commit/862d772
+
+This commit contains both my personally written screen and Codex-authored integration/tests. The commit is evidence of the completed feature, not a claim that I personally authored every file in it.
 
 ## Phase 12 — Route Status
 
