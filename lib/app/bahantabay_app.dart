@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/app_theme.dart';
 import '../features/authentication/data/auth_service.dart';
-import '../features/authentication/presentation/auth_gate.dart';
+import '../features/splash/presentation/splash_gate.dart';
 import '../features/routes/data/route_service.dart';
 import '../features/flood_reports/data/flood_report_service.dart';
 
@@ -27,7 +27,7 @@ class BahantabayApp extends StatelessWidget {
       locale: DevicePreview.locale(context),
       builder: DevicePreview.appBuilder,
       theme: AppTheme.light,
-      home: AuthGate(
+      home: SplashGate(
         authService: authService,
         routeService: routeService,
         floodReportService: floodReportService,
