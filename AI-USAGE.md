@@ -483,6 +483,8 @@ My strongest existing areas of more independent implementation are the authentic
 
 Phase 11 is now implemented, tested, manually verified, and committed. The remaining route-status phase will provide an additional opportunity for me to write meaningful Dart logic myself and document it here as it is developed. These authorship records do not by themselves establish that the M8A9 20% requirement has been reached.
 
+The September 23 security investigation and decisions were AI-assisted. Codex authored the targeted flood-report privacy changes and workflow SHA-pinning. I approved the changes, handled staging/commits/pushes, applied the live migration, inspected database privileges, tested the running app, and verified deployments. I do not count that Codex-written security implementation as my personally written code.
+
 I will not count future work as self-authored until I have actually written, tested, and committed it.
 
 ---
@@ -641,6 +643,79 @@ I had manually reviewed and approved the splash visuals. Codex did not perform l
 https://github.com/Allen021006/bahantabay/commit/9ecae2e
 
 This is student-authored / AI-assisted work: I initiated and implemented the feature using outside inspiration and personal visual judgment; ChatGPT supported learning, guidance, debugging, and review; Codex performed final review/testing and the targeted correction and test improvements described above.
+
+## Security pass — flood-report privacy and workflow hardening
+
+**Date:** September 23, 2026
+
+**Tool:** Codex, with my manual repository, Supabase, application, and deployment checks
+
+**Status:** Privacy correction and workflow hardening committed, pushed, and verified as described below. Historical Git author-email exposure remains unresolved.
+
+### Repository and live access audit
+
+I manually checked the repository for passwords, secrets, API keys, tokens, Supabase keys, tracked environment files, and suspicious credential files. The tracked `.env.example` contains placeholders only, and the real `.env` is ignored. `git log --all --full-history -- .env` returned no history, confirming that `.env` was not committed in the checked history.
+
+History searches for `SUPABASE_SECRET_KEY` and `service_role` found documentation/template references rather than actual credential values. No `.env`, `key.properties`, `google-services.json`, service-account JSON, PEM, P12, JKS, or keystore files were found in the checked Git history. I also manually confirmed that GitHub Secret Protection and Push Protection were enabled. These are the results of the checks performed, not a guarantee that every possible disclosure has been ruled out.
+
+In live Supabase, I verified that RLS was enabled for both `routes` and `flood_reports` and inspected the existing policies. My manual app checks confirmed that Guest could read intentionally public flood reports but could not see private saved routes, submit a real flood report, or create a real route. Codex did not perform these live checks.
+
+### What I asked AI to help with
+
+The security review identified unnecessary exposure of `reporter_id`: the client used wildcard SELECT and both anon and authenticated roles could read the internal reporter UUID. This was an ownership-identifier privacy issue, not a password/email leak or an account-takeover issue. Report IDs, locations, timestamps, flood depth, road status, and notes remain intentionally public community data; notes must not contain personal information.
+
+I first asked Codex for read-only analysis of the report model, service, tests, RLS verification script, migration strategy, and documentation. Codex identified that the UI did not need the fetched reporter UUID. It recommended an explicit seven-column projection, removal of `reporterId` from the public model, database column restrictions for both client roles, preservation of authenticated INSERT ownership, and corresponding tests/documentation. I approved that approach before asking Codex to implement it.
+
+### What Codex implemented
+
+Codex changed:
+
+- `lib/features/flood_reports/data/flood_report_service.dart`;
+- `lib/features/flood_reports/domain/flood_report.dart`;
+- `test/flood_report_test.dart`;
+- `test/flood_report_service_test.dart`;
+- `test/support/fake_flood_report_service.dart`;
+- `supabase/tests/phase_8_rls.sql`;
+- `supabase/README.md`;
+- `docs/06-security-and-privacy.md`.
+
+It created `supabase/migrations/20260923000000_restrict_flood_report_public_columns.sql` rather than editing or rerunning the already-applied initial migration.
+
+The client now selects exactly `id`, `latitude`, `longitude`, `flood_depth`, `road_status`, `notes`, and `created_at`. `reporter_id` remains stored for ownership and is still supplied in authenticated INSERT payloads, but is no longer part of the fetched/public `FloodReport` model. The migration removes overriding SELECT grants, restricts both client roles to the public columns, and checks effective privileges while preserving INSERT ownership and existing RLS/mutation restrictions.
+
+Repository validation after implementation reported `flutter analyze` with no issues, 58 passing tests, and a passing `git diff --check`. Those automated checks did not apply the migration or establish live database enforcement.
+
+### My deployment and live verification
+
+I explicitly staged the intended privacy files, committed them as `5692fc2`, and pushed them. GitHub Pages deployment succeeded before I applied the database correction, so the updated client projection was deployed first.
+
+I then manually applied only `supabase/migrations/20260923000000_restrict_flood_report_public_columns.sql` to the live Supabase project. The migration succeeded. I queried effective column privileges and verified that anon and authenticated SELECT were limited to the same seven public columns, neither role had SELECT access to `reporter_id`, and authenticated retained the required INSERT permission involving `reporter_id`.
+
+After migration, my live application checks passed for Guest public-report reads, signed-in public-report reads, and signed-in flood-report submission. I performed the live migration, privilege inspection, and app verification myself; Codex did not perform those steps. I am not presenting the repository SQL test-script changes as proof that the complete script was run live.
+
+### GitHub Actions hardening
+
+In response to my professor's requirement, I asked Codex to review `.github/workflows/deploy-web.yml` and replace movable action tags with full immutable commit SHAs verified against the official upstream repositories. Codex changed only the action references, preserving workflow behavior. The pins correspond to `actions/checkout` v7.0.1, `subosito/flutter-action` v2.23.0, `actions/upload-pages-artifact` v5.0.0, and `actions/deploy-pages` v5.0.1.
+
+The workflow continues to receive Supabase build configuration from GitHub Actions secrets and does not intentionally print those values. I separately committed and pushed the pinning as `86307f6` and verified that the resulting GitHub Actions build and deployment completed successfully.
+
+### Historical Git author email — unresolved
+
+During the personal-information audit, I discovered that older commits contain my personal email in author metadata. I changed the repository-local Git identity to my GitHub noreply address for future commits, but historical commits have not been rewritten.
+
+This remains pending clarification from my professor. Rewriting history would change existing commit hashes and affect the commit links used as evidence in this document. Changing future identity does not resolve the historical exposure.
+
+### Commit evidence and authorship
+
+`5692fc2` — `security: restrict flood report reporter access`
+
+https://github.com/Allen021006/bahantabay/commit/5692fc2
+
+`86307f6` — `security: pin GitHub Actions to commit SHAs`
+
+https://github.com/Allen021006/bahantabay/commit/86307f6
+
+Codex performed analysis and authored the targeted repository privacy and workflow changes. My contribution was approval, manual audit and verification, Git staging/commits/pushes, live migration application, privilege inspection, and deployment checks. These commits are not evidence that I personally wrote the security implementation, and this work does not establish that the 20% student-written requirement has been satisfied.
 
 ## Phase 12 — Route Status
 
