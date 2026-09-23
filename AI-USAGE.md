@@ -387,6 +387,30 @@ Codex later reviewed this file and found no necessary corrective edit. The file 
 
 ---
 
+### Animated startup splash
+
+**Primary files:**
+
+- `lib/features/splash/presentation/screens/splash_screen.dart`
+- `lib/features/splash/presentation/widgets/wave_painter.dart`
+- `lib/features/splash/presentation/splash_gate.dart`
+
+**Related commit:** `9ecae2e` — `feat: add animated startup splash`
+
+https://github.com/Allen021006/bahantabay/commit/9ecae2e
+
+### What I wrote and understand
+
+I chose to add this polish feature spontaneously before Phase 12, rather than as a scheduled roadmap phase. I manually assembled, implemented, tested, and visually iterated the Bahantabay-specific splash, drawing inspiration from Flutter animation and splash content on TikTok and YouTube. ChatGPT helped me learn the concepts, work through implementation steps, debug problems, and review iterations rather than supplying one finished splash to paste.
+
+The implementation combines animation timing, layered sine-wave painting, branding fades, and a crossfade into the existing app. I made the final visual decisions, including the slower timing, layered water, edge-to-edge painting, and rejection of a cluttered warning element and an upward slide/reveal exit.
+
+I consider this a strong student-authored / AI-assisted contribution, not an AI-free or entirely independently invented feature. No specific creators or video links were recorded, and I am not claiming that a source was copied verbatim.
+
+Codex did not implement or redesign the animation. During final review it added `ExcludeFocus` and `ExcludeSemantics` to my `SplashGate` to prevent interaction with the underlying app and strengthened `test/widget_test.dart`. My animation screen and `WavePainter` were unchanged by Codex, but the final gate includes that small AI-authored correction. The commit therefore contains my implementation alongside review-time AI contributions.
+
+---
+
 ## Collaborative database work
 
 ### Supabase schema and RLS
@@ -455,7 +479,7 @@ Codex has been the main implementation assistant. ChatGPT has primarily assisted
 
 I do not claim that Git commits authored under my Git account prove that I personally wrote every line in those commits.
 
-My strongest existing areas of more independent implementation are the authentication UI, route-persistence work, and the personally written Route Details screen. Database/RLS work was collaborative, while Add Route and community flood reporting involved heavier Codex implementation. The Route Details screen is mine, with ChatGPT teaching and review; the surrounding Home integration and tests in the same Phase 11 commit were authored by Codex.
+My strongest existing areas of more independent implementation are the authentication UI, route-persistence work, the personally written Route Details screen, and the animated startup splash. Database/RLS work was collaborative, while Add Route and community flood reporting involved heavier Codex implementation. The Route Details screen is mine, with ChatGPT teaching and review; the surrounding Home integration and tests in the same Phase 11 commit were authored by Codex. The splash was my implementation with TikTok/YouTube inspiration and ChatGPT teaching, guidance, and debugging; Codex contributed final review, a small interaction/accessibility correction, and test improvements.
 
 Phase 11 is now implemented, tested, manually verified, and committed. The remaining route-status phase will provide an additional opportunity for me to write meaningful Dart logic myself and document it here as it is developed. These authorship records do not by themselves establish that the M8A9 20% requirement has been reached.
 
@@ -573,6 +597,50 @@ I also verified that Guest mode did not expose private Details and that Account 
 https://github.com/Allen021006/bahantabay/commit/862d772
 
 This commit contains both my personally written screen and Codex-authored integration/tests. The commit is evidence of the completed feature, not a claim that I personally authored every file in it.
+
+## Animated startup splash — polish before Phase 12
+
+**Date:** September 23, 2026
+
+**Tools:** ChatGPT and Codex
+
+**Status:** Complete — implemented, visually approved by me, tested, and committed.
+
+### What I asked AI to help with
+
+This was a spontaneous student-initiated feature, not a scheduled roadmap phase. I felt motivated to finish a more polished startup experience before continuing with route-status logic. Flutter content I encountered on TikTok and YouTube provided inspiration/reference for animated splash concepts, water/wave movement, transitions, animation approaches, and general coding concepts. I did not record specific creators, videos, or URLs.
+
+I used ChatGPT for teaching, incremental guidance, debugging, widget-test troubleshooting, and review. We worked through `AnimationController`, `CurvedAnimation`, intervals, `TweenSequence`, `CustomPainter`, sine-wave geometry, layered waves, timing, splash/AuthGate architecture, and crossfade transitions. I manually assembled and implemented the final Bahantabay-specific version rather than receiving one complete implementation to paste.
+
+### What I kept, changed, and why
+
+I made the final visual decisions through repeated iterations. I slowed animation that felt too fast, tuned the water-rise timing, and added wave layers for depth. When I noticed the water began above the physical bottom of the display, debugging identified a `SafeArea` constraint; the splash was corrected to paint edge-to-edge.
+
+I tried a FLOOD WARNING element but rejected it because it felt cluttered. I also tried an upward slide/reveal exit, decided it was not smooth enough, and returned to a crossfade with slower timing. I checked the colors against the actual `AppColors` tokens, using Flood Blue, Alice Blue/`mapSurface`-derived waves, and the existing surface color, then visually approved the result.
+
+Existing Supabase initialization still completes before Flutter displays the splash. `AuthGate` stays mounted underneath during the crossfade and retains the existing choice between authenticated Home and unauthenticated Sign In. The splash is a transient startup presentation state, not another application screen; the five-screen MVP and Phase 12 boundary remain unchanged.
+
+### Codex review and targeted correction
+
+After I approved the visuals and the widget tests passed, I asked Codex for final review and testing, not animation implementation or redesign.
+
+Codex found that `AbsorbPointer` blocked taps but did not prevent the underlying AuthGate content from receiving keyboard focus. It added `ExcludeFocus` and `ExcludeSemantics` while keeping AuthGate mounted for the crossfade. It also strengthened `test/widget_test.dart` to check splash removal, interaction blocking/restoration, safe disposal during animation and crossfade, and authenticated startup across fresh launches.
+
+My `SplashGate` therefore received a small review-time AI correction; I do not claim every final line was untouched by AI. Codex did not change the animation screen or `WavePainter`, or redesign the approved timing, waves, colors, or transition.
+
+### Testing and verification
+
+Codex reported that the requested formatting check passed with zero changes needed, `flutter analyze` found no issues, all 58 tests passed, and `git diff --check` passed. Its review confirmed unchanged Supabase initialization and AuthGate behavior, correct controller disposal, appropriate mounted checks and duplicate-completion guarding, edge-to-edge painting, `shouldRepaint` coverage of painter inputs, and reuse of existing color tokens.
+
+I had manually reviewed and approved the splash visuals. Codex did not perform live backend or visual-device verification, so its automated results are not presented as evidence of those checks.
+
+### Commit evidence
+
+`9ecae2e` — `feat: add animated startup splash`
+
+https://github.com/Allen021006/bahantabay/commit/9ecae2e
+
+This is student-authored / AI-assisted work: I initiated and implemented the feature using outside inspiration and personal visual judgment; ChatGPT supported learning, guidance, debugging, and review; Codex performed final review/testing and the targeted correction and test improvements described above.
 
 ## Phase 12 — Route Status
 
