@@ -1,4 +1,4 @@
--- Run the entire file in Supabase SQL Editor AFTER applying the migration.
+-- Run the entire file in Supabase SQL Editor AFTER applying both migrations.
 -- Requires two existing non-anonymous test accounts (create through app Sign Up).
 -- Uses their UUIDs internally, never prints them or changes auth.users.
 -- All fixture data and temporary functions are rolled back.
@@ -54,6 +54,10 @@ end;
 $$;
 
 -- User A can insert their own route/report; defaults supply ownership and time.
+-- Match the Flutter payload too: explicit own reporter_id needs INSERT, not SELECT.
+insert into public.flood_reports
+  (reporter_id, latitude, longitude, flood_depth, road_status, notes)
+values (auth.uid(), 15.14, 120.58, 'ankle', 'passable', 'Privacy verification');
 do $$
 declare route_id uuid; report_id uuid;
 begin
@@ -133,6 +137,21 @@ $$;
 select pg_temp.assert_true(
   (select count(*) = 1 from public.flood_reports where id = current_setting('test.report')::uuid),
   'authenticated community read');
+do $$
+declare report record;
+begin
+  select id, latitude, longitude, flood_depth, road_status, notes, created_at
+    into strict report from public.flood_reports
+    where id = current_setting('test.report')::uuid;
+  perform pg_temp.assert_true(report.flood_depth = 'knee' and report.created_at is not null,
+    'authenticated public projection');
+end;
+$$;
+select pg_temp.assert_true(
+  not has_column_privilege(current_user, 'public.flood_reports', 'reporter_id', 'SELECT'),
+  'authenticated has no effective reporter SELECT privilege');
+select pg_temp.expect_error('select reporter_id from public.flood_reports', '42501');
+select pg_temp.expect_error('select * from public.flood_reports', '42501');
 select pg_temp.expect_error(
   format('update public.flood_reports set notes = ''Forbidden'' where id = %L',
     current_setting('test.report')), '42501');
@@ -151,6 +170,21 @@ select pg_temp.assert_true(auth.uid() is null, 'guest has no authenticated ident
 select pg_temp.assert_true(
   (select count(*) = 1 from public.flood_reports where id = current_setting('test.report')::uuid),
   'guest community read');
+do $$
+declare report record;
+begin
+  select id, latitude, longitude, flood_depth, road_status, notes, created_at
+    into strict report from public.flood_reports
+    where id = current_setting('test.report')::uuid;
+  perform pg_temp.assert_true(report.flood_depth = 'knee' and report.created_at is not null,
+    'guest public projection');
+end;
+$$;
+select pg_temp.assert_true(
+  not has_column_privilege(current_user, 'public.flood_reports', 'reporter_id', 'SELECT'),
+  'guest has no effective reporter SELECT privilege');
+select pg_temp.expect_error('select reporter_id from public.flood_reports', '42501');
+select pg_temp.expect_error('select * from public.flood_reports', '42501');
 select pg_temp.expect_error('select * from public.routes', '42501');
 select pg_temp.expect_error(
   'insert into public.routes (name,start_latitude,start_longitude,destination_latitude,destination_longitude)
@@ -189,4 +223,3 @@ select pg_temp.expect_error(
 reset role;
 rollback;
 select 'PASS: ownership, guest access, public reads, mutation restrictions and constraints; fixtures rolled back.' as result;
-

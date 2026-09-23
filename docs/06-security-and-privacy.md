@@ -4,6 +4,8 @@ This repository is public. This document records the current security and privac
 
 **Last checked:** 2026-09-17 (Phase 10 client integration; Phase 8 RLS and Phase 9 live route flow confirmed by project owner)
 
+**Privacy correction prepared: 2026-09-23.** The client now selects only public report fields and does not store fetched reporter IDs. The new migration `supabase/migrations/20260923000000_restrict_flood_report_public_columns.sql` is pending manual live application and verification. Until it is applied, the original database grants still allow clients to request reporter UUIDs directly. The earlier dated status below is historical, not verification of this new correction.
+
 ## What this app stores
 
 | Data | Where it lives | Who can see it |
@@ -59,12 +61,12 @@ The deployed migration defines the following access model:
 - Only authenticated users can create flood reports.
 - A submitted report must be associated with the authenticated user's ID rather than allowing the client to impersonate another user.
 - Flood reports are append-only for clients: neither `anon` nor `authenticated` has UPDATE or DELETE permissions, even for their own reports.
-- Public reads include reporter UUIDs and notes, but no Auth email or other profile information. Notes must not contain private information.
+- Public client reads select only `id`, `latitude`, `longitude`, `flood_depth`, `road_status`, `notes`, and `created_at`. The prepared privacy migration restricts both anon and authenticated SELECT to these columns; it must still be applied and live-tested. Notes remain public and must not contain private/personal information. No Auth email or profile information is included.
 - The app's guest flow uses `anon`, not Supabase anonymous sign-in; guests cannot submit reports. Supabase anonymous sign-in is not used and should remain disabled.
 - Phase 10 Home fetches the latest 100 public reports, newest first, for both guests and authenticated users. It replaces demo flood entries/markers, provides refresh/retry actions, and does not filter by distance or calculate route danger.
 - Report Flood requires a manually selected valid map coordinate, one of `ankle/knee/waist/chest`, and `passable/not_passable`. Notes are optional, with a 1,000-character client limit and a reminder that notes are public. The existing SQL text column has no added length constraint.
 - The submission service checks the active authenticated user and pins `reporter_id` to that user; RLS enforces ownership. IDs and timestamps remain database-generated. Pending submissions disable the form, failures preserve the draft, and successful submissions return to Home and reload reports.
-- Reporter UUIDs remain in the database model for ownership; the UI does not display reporter UUIDs, emails, names, or Auth details. No client report UPDATE/DELETE methods, photo upload, or Supabase Storage were added.
+- Reporter UUIDs remain in the database and authenticated INSERT payload for ownership, but are removed from the public Flutter model and SELECT projection. The migration removes table-level and reporter-column SELECT grants without changing existing INSERT permissions or RLS policies, and checks effective privileges to detect inherited access. The UI does not display reporter UUIDs, emails, names, or Auth details. No client report UPDATE/DELETE methods, photo upload, or Supabase Storage were added.
 - Account changes discard any open Report Flood draft with the existing account-scoped navigation. Public reports can appear across accounts by design; private route isolation is unchanged.
 
 Both tables use required Auth ownership foreign keys with `ON DELETE CASCADE`: deleting an Auth account removes its routes and reports. Client writes cannot override database-generated IDs/timestamps or transfer route ownership. No optional `profiles` table is needed for current functionality.
@@ -72,6 +74,10 @@ Both tables use required Auth ownership foreign keys with `ON DELETE CASCADE`: d
 See [database setup and verification](../supabase/README.md) for the Phase 8 setup instructions, grants, constraints, and rollback-only role tests in `supabase/tests/phase_8_rls.sql`. Its original preparation status predates the project owner's confirmation; do not rerun the initial migration on the deployed tables.
 
 ## Checklist
+
+- [x] Public flood-report projection/model and column-privacy migration prepared.
+- [ ] Apply the new privacy migration and run the updated rollback-only SQL verification after both migrations.
+- [ ] Verify guest/authenticated public reads, denied reporter/wildcard API reads, and authenticated submit/refresh against live Supabase. Deploy the updated client before applying the migration; old cached wildcard clients require refresh.
 
 - [x] `.env` is in `.gitignore`.
 - [x] `.env.example` exists for documenting the required environment-variable names without storing their real values.

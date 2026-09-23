@@ -22,7 +22,9 @@ class SupabaseFloodReportService implements FloodReportService {
       // Public reads are allowed by RLS for both anon and authenticated roles.
       final rows = await _client
           .from('flood_reports')
-          .select()
+          .select(
+            'id,latitude,longitude,flood_depth,road_status,notes,created_at',
+          )
           .order('created_at', ascending: false)
           .limit(100);
       return rows.map(FloodReport.fromMap).toList();

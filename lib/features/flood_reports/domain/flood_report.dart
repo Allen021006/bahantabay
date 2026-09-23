@@ -43,7 +43,6 @@ class FloodReportDraft {
 class FloodReport extends FloodReportDraft {
   const FloodReport({
     required this.id,
-    required this.reporterId,
     required super.latitude,
     required super.longitude,
     required super.depth,
@@ -53,7 +52,6 @@ class FloodReport extends FloodReportDraft {
   });
 
   final String id;
-  final String reporterId;
   final DateTime createdAt;
 
   factory FloodReport.fromMap(Map<String, dynamic> map) {
@@ -64,7 +62,6 @@ class FloodReport extends FloodReportDraft {
     }
     return FloodReport(
       id: map['id'] as String,
-      reporterId: map['reporter_id'] as String,
       latitude: latitude,
       longitude: longitude,
       depth: FloodDepth.fromCode(map['flood_depth'] as String),

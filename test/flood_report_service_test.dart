@@ -80,7 +80,6 @@ void main() {
             jsonEncode([
               {
                 'id': 'report-1',
-                'reporter_id': userId,
                 'latitude': 15,
                 'longitude': 120,
                 'flood_depth': 'knee',
@@ -124,6 +123,10 @@ void main() {
       expect(reports.single.roadStatus, RoadStatus.passable);
       final uri = requests.single['uri'] as Uri;
       expect(uri.path, '/rest/v1/flood_reports');
+      expect(
+        uri.queryParameters['select'],
+        'id,latitude,longitude,flood_depth,road_status,notes,created_at',
+      );
       expect(uri.queryParameters['order'], 'created_at.desc.nullslast');
       expect(uri.queryParameters['limit'], '100');
       expect(uri.queryParameters.containsKey('reporter_id'), isFalse);
@@ -157,6 +160,13 @@ void main() {
       });
       final reports = await service.fetchReports();
       expect(reports, hasLength(1));
+      final uri = requests.last['uri'] as Uri;
+      expect(
+        uri.queryParameters['select'],
+        'id,latitude,longitude,flood_depth,road_status,notes,created_at',
+      );
+      expect(uri.queryParameters['order'], 'created_at.desc.nullslast');
+      expect(uri.queryParameters['limit'], '100');
     },
   );
 

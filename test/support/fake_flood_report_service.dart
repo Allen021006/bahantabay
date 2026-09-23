@@ -8,7 +8,6 @@ FloodReport exampleFloodReport({
   String? notes = 'Water covers the crossing.',
 }) => FloodReport(
   id: id,
-  reporterId: 'reporter-test-id',
   latitude: 15.1470,
   longitude: 120.5920,
   depth: FloodDepth.knee,
@@ -43,7 +42,6 @@ class FakeFloodReportService implements FloodReportService {
       0,
       FloodReport(
         id: 'new-report',
-        reporterId: userId,
         latitude: draft.latitude,
         longitude: draft.longitude,
         depth: draft.depth,
