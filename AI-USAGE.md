@@ -385,6 +385,8 @@ I built it this way because Details presents route data that Home has already lo
 
 Codex later reviewed this file and found no necessary corrective edit. The file remained byte-for-byte unchanged during that review and integration pass. Codex authored the surrounding Home navigation and automated tests after my screen implementation was complete. I therefore claim authorship of `route_details_screen.dart`, not the entire `862d772` commit.
 
+That unchanged-file statement applies to Phase 11. In Phase 12, Codex added the nullable status input and status-badge presentation described in the continuing record below; my original screen implementation remains distinct from those later integration edits.
+
 ---
 
 ### Animated startup splash
@@ -408,6 +410,29 @@ The implementation combines animation timing, layered sine-wave painting, brandi
 I consider this a strong student-authored / AI-assisted contribution, not an AI-free or entirely independently invented feature. No specific creators or video links were recorded, and I am not claiming that a source was copied verbatim.
 
 Codex did not implement or redesign the animation. During final review it added `ExcludeFocus` and `ExcludeSemantics` to my `SplashGate` to prevent interaction with the underlying app and strengthened `test/widget_test.dart`. My animation screen and `WavePainter` were unchanged by Codex, but the final gate includes that small AI-authored correction. The commit therefore contains my implementation alongside review-time AI contributions.
+
+---
+
+### Route Status calculator and tests
+
+**Primary files:**
+
+- `lib/features/routes/domain/route_status_calculator.dart`
+- `test/route_status_calculator_test.dart`
+
+**Related commit:** `05bbdef` — `feat: add route status assessment`
+
+https://github.com/Allen021006/bahantabay/commit/05bbdef
+
+### What I wrote and understand
+
+I personally wrote `route_status_calculator.dart` and its 12 focused tests in `route_status_calculator_test.dart`, incrementally with ChatGPT teaching and guidance. These two files are Allen-authored, not generated or written by Codex. They are strong examples of my personally written Dart logic and tests, rather than a claim that I worked without assistance.
+
+I approximately converted latitude/longitude into local meter coordinates using 111320 meters per degree latitude and a longitude scale based on the cosine of the route's reference latitude, converted to radians. I used dot-product projection to find the closest point on the route's bounded straight-line segment. Clamping the projection to 0.0–1.0 prevents a report near an imaginary extension from counting unless it is also within 200 meters of an endpoint. I explicitly handled identical start and destination points to avoid division by zero.
+
+I separated geographic relevance from severity: a relevant passable report means WARNING, a relevant not-passable report means NOT PASSABLE, and NOT PASSABLE wins. With no relevant report, the calculator returns SAFE. The caller must first establish that reports loaded successfully; the calculator does not fetch data or decide whether loading failed.
+
+ChatGPT helped me understand and reason through the algorithm incrementally. Codex later reviewed both completed files read-only, concluded READY FOR INTEGRATION, and left them unchanged during review and UI integration. Codex authored the surrounding Home/Details integration and widget-test changes in the same commit; I do not claim authorship of the entire `05bbdef` commit.
 
 ---
 
@@ -481,7 +506,7 @@ I do not claim that Git commits authored under my Git account prove that I perso
 
 My strongest existing areas of more independent implementation are the authentication UI, route-persistence work, the personally written Route Details screen, and the animated startup splash. Database/RLS work was collaborative, while Add Route and community flood reporting involved heavier Codex implementation. The Route Details screen is mine, with ChatGPT teaching and review; the surrounding Home integration and tests in the same Phase 11 commit were authored by Codex. The splash was my implementation with TikTok/YouTube inspiration and ChatGPT teaching, guidance, and debugging; Codex contributed final review, a small interaction/accessibility correction, and test improvements.
 
-Phase 11 is now implemented, tested, manually verified, and committed. The remaining route-status phase will provide an additional opportunity for me to write meaningful Dart logic myself and document it here as it is developed. These authorship records do not by themselves establish that the M8A9 20% requirement has been reached.
+Phases 11 and 12 are now implemented, tested, manually verified, and committed. My Phase 12 calculator and its 12 tests add strong student-authored evidence: I wrote them with ChatGPT teaching and guidance, while Codex performed read-only review and later authored the surrounding UI integration and widget tests. These authorship records do not by themselves establish that the M8A9 20% requirement has been reached.
 
 The September 23 security investigation and decisions were AI-assisted. Codex authored the targeted flood-report privacy changes and workflow SHA-pinning. I approved the changes, handled staging/commits/pushes, applied the live migration, inspected database privileges, tested the running app, and verified deployments. I do not count that Codex-written security implementation as my personally written code.
 
@@ -717,11 +742,74 @@ https://github.com/Allen021006/bahantabay/commit/86307f6
 
 Codex performed analysis and authored the targeted repository privacy and workflow changes. My contribution was approval, manual audit and verification, Git staging/commits/pushes, live migration application, privilege inspection, and deployment checks. These commits are not evidence that I personally wrote the security implementation, and this work does not establish that the 20% student-written requirement has been satisfied.
 
-## Phase 12 — Route Status
+## Phase 12 — Route Status Assessment
 
-**Status:** Not started at the time of this baseline.
+**Commit date:** September 25, 2026
 
-This phase is expected to contain meaningful personally written Dart logic, but it will not be claimed as self-authored until that code has actually been written, tested, and committed.
+**Tools:** ChatGPT and Codex
+
+**Status:** Complete — implemented, automatically tested, manually verified by me, reviewed again before acceptance, and committed by me.
+
+### What I asked AI to help with
+
+I used ChatGPT to understand and reason through route-status assessment incrementally while personally writing the calculator and its tests. The locked rule was proximity within 200 meters of a bounded straight-line saved route, with the most severe relevant report determining status. ChatGPT provided teaching and guidance rather than replacing my calculator with a finished generated implementation.
+
+After completing both files, I asked Codex for a read-only review before UI integration. Codex concluded READY FOR INTEGRATION without modifying either student-authored file. I then asked it to connect the existing calculator to real saved routes using the existing application structure.
+
+### What I wrote and tested
+
+I personally wrote `lib/features/routes/domain/route_status_calculator.dart` and `test/route_status_calculator_test.dart`. The local meter conversion uses 111320 meters per degree latitude and `cos(reference latitude)` for longitude scaling, with radians conversion. The distance calculation uses dot-product projection clamped to 0.0–1.0 and explicit zero-length segment handling.
+
+Relevant `RoadStatus.passable` produces `RouteStatus.warning`; relevant `RoadStatus.notPassable` produces `RouteStatus.notPassable` and takes precedence over WARNING. No relevant report in a successfully loaded collection produces `RouteStatus.clear` / SAFE.
+
+My 12 calculator tests cover:
+
+1. no reports producing SAFE;
+2. a report beyond 200 meters being ignored;
+3. nearby passable producing WARNING;
+4. nearby not-passable producing NOT PASSABLE;
+5. nearby WARNING plus NOT PASSABLE producing NOT PASSABLE;
+6. a midpoint report being detected;
+7. a start-endpoint report being detected;
+8. a destination-endpoint report being detected;
+9. a report along the extension beyond the destination, outside endpoint proximity, being ignored;
+10. exactly 200 meters being included;
+11. 201 meters being excluded;
+12. identical start/destination being handled safely.
+
+### What Codex implemented
+
+Codex authored the mechanical UI integration and widget-test changes in:
+
+- `lib/features/home/presentation/screens/home_screen.dart`;
+- `lib/features/routes/presentation/screens/route_details_screen.dart`;
+- `lib/features/routes/presentation/widgets/route_card.dart`;
+- `test/home_screen_test.dart`;
+- `test/route_details_screen_test.dart`.
+
+Real persisted routes on Home List now use calculated statuses. Home Map uses the same assessment helper and loaded report collection. Route Details receives a nullable status snapshot from Home at navigation time rather than fetching reports or calculating status again. Loading and failed report retrieval remain unassessed instead of becoming SAFE; a successfully loaded empty collection can produce SAFE.
+
+Home derives status from its route/report state, so route refreshes and successful report reloads, including after a new submission, can cause reassessment. No separate route-status database field was added. Guest/demo hard-coded statuses remain separate from real persisted-route assessment. Codex also bounded RouteCard name/coordinate text with two-line ellipsis so the longer NOT PASSABLE presentation would not make cards excessively tall.
+
+### Testing and manual verification
+
+Before UI integration, my calculator tests passed, the full suite reached 70 passing tests, `flutter analyze` was clean, and `git diff --check` passed. After integration, analysis remained clean, all 78 tests passed, and `git diff --check` passed. The integration tests cover List/Map/Details status agreement, loading/error/retry behavior, refresh and submission reassessment, Details snapshots, and guest/navigation behavior.
+
+I manually ran and verified the application behavior and UI. The final implementation was reviewed again before acceptance, and I committed it as `05bbdef`. The automated results and my manual verification are distinct checks; Codex did not perform my manual runtime verification.
+
+### MVP limitations
+
+Assessment uses the report collection loaded by the existing service, currently the latest 100 public reports globally. It uses the saved straight-line segment, not road-following geometry. The 200-meter threshold is an MVP heuristic, and local coordinate conversion is an approximation for short local routes, not global/geodesic routing.
+
+There is no report expiry/resolution rule, and flood depth does not independently change severity. SAFE means no severity-raising report was found in the successfully assessed data; it is not a guarantee that a real road is safe.
+
+### Commit evidence and authorship
+
+`05bbdef` — `feat: add route status assessment`
+
+https://github.com/Allen021006/bahantabay/commit/05bbdef
+
+The calculator and its 12 tests are Allen-authored; ChatGPT provided incremental teaching and guidance; Codex performed read-only review and then authored the surrounding UI integration and widget tests. Codex did not modify my calculator or calculator tests. This mixed-authorship commit does not establish that I personally wrote every file or that the 20% student-written requirement has been reached.
 
 ## Final integration and deployment
 
