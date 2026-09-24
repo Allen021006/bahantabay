@@ -5,10 +5,27 @@ import 'package:latlong2/latlong.dart';
 
 import 'package:bahantabay/core/theme/app_theme.dart';
 import 'package:bahantabay/features/routes/domain/saved_route.dart';
+import 'package:bahantabay/features/routes/domain/route_status.dart';
 import 'package:bahantabay/features/routes/presentation/screens/route_details_screen.dart';
 import 'support/fake_route_service.dart';
 
 void main() {
+  for (final status in RouteStatus.values) {
+    testWidgets('Details displays supplied ${status.label} snapshot', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: RouteDetailsScreen(route: exampleRoute(), status: status),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(status.label), findsOneWidget);
+      expect(find.text('Status not assessed'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
   final first = exampleRoute();
   final second = SavedRoute(
     id: 'route-2',

@@ -11,6 +11,7 @@ import '../../../flood_reports/data/flood_report_service.dart';
 import '../../../flood_reports/presentation/screens/report_flood_screen.dart';
 import '../../../flood_reports/presentation/widgets/flood_report_entry.dart';
 import '../../../routes/domain/route_status.dart';
+import '../../../routes/domain/route_status_calculator.dart';
 import '../../../routes/domain/saved_route.dart';
 import '../../../routes/data/route_service.dart';
 import '../../../routes/presentation/screens/add_route_screen.dart';
@@ -231,9 +232,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openRouteDetails(SavedRoute route) {
     if (widget.isGuest || route.userId != widget.userId) return;
+    final status = _assessRoute(route);
     Navigator.of(context).push<void>(
-      MaterialPageRoute(builder: (_) => RouteDetailsScreen(route: route)),
+      MaterialPageRoute(
+        builder: (_) => RouteDetailsScreen(route: route, status: status),
+      ),
     );
+  }
+
+  RouteStatus? _assessRoute(SavedRoute route) {
+    // An empty successful result is SAFE; loading or failure is not an assessment.
+    if (_loadingReports || _reportError != null) return null;
+    return RouteStatusCalculator().calculate(route: route, reports: _reports);
   }
 
   String _coordinates(double latitude, double longitude) =>
@@ -439,7 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 route.destinationLatitude,
                 route.destinationLongitude,
               ),
-              status: null,
+              status: _assessRoute(route),
               onTap: () => _openRouteDetails(route),
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -669,7 +679,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     selected == null
                         ? 'St. Ignatius Subd. to Holy Angel University'
-                        : 'Status not assessed',
+                        : _assessRoute(selected)?.label ??
+                              'Status not assessed',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall,

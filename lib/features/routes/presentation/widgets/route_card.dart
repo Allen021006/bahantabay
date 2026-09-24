@@ -48,6 +48,8 @@ class RouteCard extends StatelessWidget {
                   children: [
                     Text(
                       routeName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -55,6 +57,8 @@ class RouteCard extends StatelessWidget {
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       '$startLabel → $endLabel',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     if (status == null)

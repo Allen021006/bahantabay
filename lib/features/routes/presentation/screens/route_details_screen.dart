@@ -5,11 +5,14 @@ import 'package:latlong2/latlong.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../domain/saved_route.dart';
+import '../../domain/route_status.dart';
+import '../widgets/status_badge.dart';
 
 class RouteDetailsScreen extends StatelessWidget {
-  const RouteDetailsScreen({super.key, required this.route});
+  const RouteDetailsScreen({super.key, required this.route, this.status});
 
   final SavedRoute route;
+  final RouteStatus? status;
 
   @override
   Widget build(BuildContext context) {
@@ -35,10 +38,13 @@ class RouteDetailsScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.lg),
                 Text('Status', style: Theme.of(context).textTheme.labelSmall),
                 const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Status not assessed',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
+                if (status != null)
+                  StatusBadge(status: status!)
+                else
+                  Text(
+                    'Status not assessed',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                 const SizedBox(height: AppSpacing.lg),
                 Text('START', style: Theme.of(context).textTheme.labelSmall),
                 const SizedBox(height: AppSpacing.xs),

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:bahantabay/features/routes/data/route_service.dart';
 import 'package:bahantabay/features/routes/domain/saved_route.dart';
+import 'package:bahantabay/features/routes/domain/route_status.dart';
+import 'package:bahantabay/features/flood_reports/domain/flood_depth.dart';
+import 'package:bahantabay/features/flood_reports/domain/road_status.dart';
 import 'support/fake_route_service.dart';
 import 'support/fake_flood_report_service.dart';
 import 'support/flood_form_actions.dart';
@@ -54,6 +57,151 @@ Widget _testApp({
 }
 
 void main() {
+  for (final status in RouteStatus.values) {
+    testWidgets('real List, Map and Details agree on ${status.label}', (
+      tester,
+    ) async {
+      usePhoneSize(tester);
+      final route = exampleRoute();
+      final routes = FakeRouteService()..routes = [route];
+      final reports = FakeFloodReportService();
+      if (status != RouteStatus.clear) {
+        reports.reports = [
+          FloodReport(
+            id: 'near-route',
+            latitude: route.startLatitude,
+            longitude: route.startLongitude,
+            depth: FloodDepth.ankle,
+            roadStatus: status == RouteStatus.warning
+                ? RoadStatus.passable
+                : RoadStatus.notPassable,
+            createdAt: DateTime.utc(2026, 9, 23),
+          ),
+        ];
+      }
+      await tester.pumpWidget(
+        _testApp(
+          isGuest: false,
+          routeService: routes,
+          floodReportService: reports,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.widget<RouteCard>(find.byType(RouteCard)).status, status);
+      expect(find.text(status.label), findsOneWidget);
+      await tester.tap(find.byType(RouteCard));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<RouteDetailsScreen>(find.byType(RouteDetailsScreen))
+            .status,
+        status,
+      );
+      expect(find.text(status.label), findsOneWidget);
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Map'));
+      await tester.pumpAndSettle();
+      expect(find.text(status.label), findsOneWidget);
+      await tester.tap(find.text('View'));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<RouteDetailsScreen>(find.byType(RouteDetailsScreen))
+            .status,
+        status,
+      );
+      expect(find.text(status.label), findsOneWidget);
+      expect(reports.fetchCalls, 1);
+      expect(routes.fetchCalls, 1);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('loading, failure and retry remain unassessed until success', (
+    tester,
+  ) async {
+    final pending = Completer<List<FloodReport>>();
+    final reports = FakeFloodReportService()..onFetch = () => pending.future;
+    await tester.pumpWidget(
+      _testApp(
+        isGuest: false,
+        routeService: FakeRouteService()..routes = [exampleRoute()],
+        floodReportService: reports,
+      ),
+    );
+    await tester.pump();
+    expect(tester.widget<RouteCard>(find.byType(RouteCard)).status, isNull);
+    expect(find.text('SAFE'), findsNothing);
+    await tester.tap(find.text('Map'));
+    await tester.pump();
+    expect(find.text('Status not assessed'), findsOneWidget);
+    await tester.tap(find.text('View'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(
+      tester.widget<RouteDetailsScreen>(find.byType(RouteDetailsScreen)).status,
+      isNull,
+    );
+    pending.completeError(Exception('fetch failed'));
+    await tester.pumpAndSettle();
+    expect(find.text('Status not assessed'), findsOneWidget);
+    expect(find.text('SAFE'), findsNothing);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.text('Status not assessed'), findsOneWidget);
+    await tester.tap(find.text('List'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<RouteCard>(find.byType(RouteCard)).status, isNull);
+    final retry = Completer<List<FloodReport>>();
+    reports.onFetch = () => retry.future;
+    await tester.ensureVisible(find.text('Retry flood reports'));
+    await tester.tap(find.text('Retry flood reports'));
+    await tester.pump();
+    expect(find.text('SAFE'), findsNothing);
+    retry.complete([]);
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<RouteCard>(find.byType(RouteCard)).status,
+      RouteStatus.clear,
+    );
+  });
+
+  testWidgets(
+    'report refresh recalculates Home but open Details keeps its snapshot',
+    (tester) async {
+      final reports = FakeFloodReportService();
+      await tester.pumpWidget(
+        _testApp(
+          isGuest: false,
+          routeService: FakeRouteService()..routes = [exampleRoute()],
+          floodReportService: reports,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('SAFE'), findsOneWidget);
+      final refresh = Completer<List<FloodReport>>();
+      reports.onFetch = () => refresh.future;
+      await tester.tap(find.byTooltip('Refresh flood reports'));
+      await tester.pump();
+      expect(tester.widget<RouteCard>(find.byType(RouteCard)).status, isNull);
+      await tester.tap(find.byType(RouteCard));
+      await tester.pump(const Duration(milliseconds: 400));
+      refresh.complete([exampleFloodReport()]);
+      await tester.pumpAndSettle();
+      expect(find.text('Status not assessed'), findsOneWidget);
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<RouteCard>(find.byType(RouteCard)).status,
+        RouteStatus.notPassable,
+      );
+      await tester.tap(find.byType(RouteCard));
+      await tester.pumpAndSettle();
+      expect(find.text('NOT PASSABLE'), findsOneWidget);
+    },
+  );
+
   for (final index in [0, 1]) {
     testWidgets('List opens exact saved route $index and Back keeps Home', (
       tester,
@@ -201,6 +349,14 @@ void main() {
     expect(find.byType(RouteCard), findsNWidgets(2));
     expect(service.fetchCalls, 0);
     expect(service.saveCalls, 0);
+    expect(
+      tester.widget<RouteCard>(find.byType(RouteCard).first).status,
+      RouteStatus.warning,
+    );
+    expect(
+      tester.widget<RouteCard>(find.byType(RouteCard).last).status,
+      RouteStatus.clear,
+    );
   });
 
   testWidgets('List and Map segments change one Home screen state', (
@@ -337,7 +493,7 @@ void main() {
       expect(service.fetchCalls, 2);
       expect(service.lastDraft!.name, 'My saved route');
       expect(find.text('My saved route'), findsOneWidget);
-      expect(find.text('Status not assessed'), findsOneWidget);
+      expect(find.text('NOT PASSABLE'), findsOneWidget);
       expect(find.text('SAFE'), findsNothing);
       await tester.tap(find.text('Map'));
       await tester.pump();
@@ -351,6 +507,7 @@ void main() {
         service.routes.single.destinationLongitude,
       );
       expect(find.text('My saved route'), findsOneWidget);
+      expect(find.text('NOT PASSABLE'), findsOneWidget);
     },
   );
 
@@ -412,6 +569,7 @@ void main() {
         ),
       );
       await tester.pump();
+      expect(find.text('SAFE'), findsOneWidget);
       await tester.tap(find.text('Report Flood'));
       await tester.pumpAndSettle();
       expect(find.byType(ReportFloodScreen), findsOneWidget);
@@ -427,7 +585,7 @@ void main() {
       expect(find.byType(FloodReportEntry), findsOneWidget);
       expect(find.textContaining('Knee-deep'), findsOneWidget);
       expect(find.text('user-a'), findsNothing);
-      expect(find.text('Status not assessed'), findsOneWidget);
+      expect(find.text('NOT PASSABLE'), findsOneWidget);
       await tester.tap(find.text('Map'));
       await tester.pump();
       expect(
@@ -443,7 +601,7 @@ void main() {
       );
       expect(reportMarker.point.latitude, reports.lastDraft!.latitude);
       expect(reportMarker.point.longitude, reports.lastDraft!.longitude);
-      expect(find.text('Status not assessed'), findsOneWidget);
+      expect(find.text('NOT PASSABLE'), findsOneWidget);
       expect(find.text('SAFE'), findsNothing);
       expect(find.text('WARNING'), findsNothing);
       expect(tester.takeException(), isNull);
