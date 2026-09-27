@@ -151,7 +151,9 @@ These earlier runtime captures show four application screens, including both pre
 
 Report Flood is implemented and manually verified against live Supabase. This capture shows the form; backend verification was performed separately.
 
-Route Details is implemented and manually verified, but its runtime screenshot has not yet been captured here. The existing `Route Details.png` below is an approved mockup, not runtime evidence.
+#### Route Details
+
+![Route Details runtime screenshot](docs/assets/runtime-route-details.png)
 
 ### Approved design mockups — not runtime evidence
 
@@ -171,7 +173,7 @@ Additional mockups: [Add Route](docs/assets/Add%20Route.png), [Route Details](do
 - Home reads only the latest 100 public reports globally, newest first, without geographic filtering of the fetch, pagination or automatic realtime updates. Route proximity is assessed locally within that collection.
 - Clients cannot edit/delete reports. Public notes must not contain personal information; internal reporter IDs are excluded from client SELECT access.
 - If connectivity drops during submission, check Home before retrying to avoid a duplicate.
-- Final production integration/deployment and authentication verification remain pending, along with updated runtime screenshots and presentation materials.
+- The owner confirmed the Actions build and Pages deployment for `1f3a49d` passed. Final live application/authentication verification, updated runtime screenshots and presentation materials remain pending.
 
 **Next steps:** verify the complete application on GitHub Pages and Supabase; finish UI/UX polish, updated screenshots, documentation, demo video and the final security/privacy review.
 
@@ -185,7 +187,7 @@ The privacy correction limits anon/authenticated report SELECT access to `id`, `
 
 The [Pages workflow](.github/workflows/deploy-web.yml) runs on pushes to `main` or manual dispatch. Its external actions are pinned to verified full commit SHAs rather than movable tags. Set Pages to **GitHub Actions** and add repository secrets `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`. The workflow supplies `--dart-define` values and the repository base path; it uploads `build/web`, not `.env`.
 
-Analysis/test failures currently do not block deployment. Verify the build, configuration and Supabase production authentication URL settings before treating the demo as verified. DevicePreview remains enabled in deployed builds.
+Analysis failures and test failures now block deployment (`flutter analyze --no-fatal-infos` still allows informational diagnostics). The build also fails before compilation if either required Supabase value is empty, without printing the values. These checks do not validate whether nonempty credentials are correct. The owner confirmed the Actions build and Pages deployment for `1f3a49d` passed; final live application and production authentication checks remain separate. DevicePreview remains enabled in deployed builds.
 
 Do not commit `.env`, privileged keys, passwords, personal information or private user data. See [Security and privacy](docs/06-security-and-privacy.md) for access rules and outstanding checks.
 
