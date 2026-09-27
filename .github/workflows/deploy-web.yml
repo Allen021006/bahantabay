@@ -62,11 +62,9 @@ jobs:
 
       - if: steps.check.outputs.ready == 'true'
         run: flutter analyze --no-fatal-infos
-        continue-on-error: true
 
       - if: steps.check.outputs.ready == 'true'
         run: flutter test
-        continue-on-error: true
 
       - name: Build web
         if: steps.check.outputs.ready == 'true'
@@ -74,6 +72,16 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "::error::Missing required SUPABASE_URL."
+            exit 1
+          fi
+
+          if [ -z "$SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "::error::Missing required SUPABASE_PUBLISHABLE_KEY."
+            exit 1
+          fi
+
           flutter build web --release \
             --base-href "/${{ github.event.repository.name }}/" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
