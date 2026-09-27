@@ -675,7 +675,7 @@ This is student-authored / AI-assisted work: I initiated and implemented the fea
 
 **Tool:** Codex, with my manual repository, Supabase, application, and deployment checks
 
-**Status:** Privacy correction and workflow hardening committed, pushed, and verified as described below. Historical Git author-email exposure remains unresolved.
+**Status:** Privacy correction and workflow hardening committed, pushed, and verified as described below. Historical Git author-email exposure was unresolved at the time of this entry; see the dated clarification below.
 
 ### Repository and live access audit
 
@@ -724,11 +724,13 @@ In response to my professor's requirement, I asked Codex to review `.github/work
 
 The workflow continues to receive Supabase build configuration from GitHub Actions secrets and does not intentionally print those values. I separately committed and pushed the pinning as `86307f6` and verified that the resulting GitHub Actions build and deployment completed successfully.
 
-### Historical Git author email — unresolved
+### Historical Git author email — clarification pending at the time
 
 During the personal-information audit, I discovered that older commits contain my personal email in author metadata. I changed the repository-local Git identity to my GitHub noreply address for future commits, but historical commits have not been rewritten.
 
 This remains pending clarification from my professor. Rewriting history would change existing commit hashes and affect the commit links used as evidence in this document. Changing future identity does not resolve the historical exposure.
+
+**Follow-up recorded September 27, 2026:** My professor clarified that Git author metadata is expected to be public. The concern is unnecessary personal information, such as a full name, student number or personal email, in the project content. I did not rewrite Git history or remove historical author metadata. The earlier concern above is retained as part of the audit record, not as a pending requirement to rewrite history.
 
 ### Commit evidence and authorship
 
