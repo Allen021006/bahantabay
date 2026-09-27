@@ -9,9 +9,10 @@ import '../../data/route_service.dart';
 import '../../domain/saved_route.dart';
 
 class AddRouteScreen extends StatefulWidget {
-  const AddRouteScreen({super.key, this.routeService, this.userId});
+  const AddRouteScreen({super.key, this.routeService, this.userId, this.route});
   final RouteService? routeService;
   final String? userId;
+  final SavedRoute? route;
 
   @override
   State<AddRouteScreen> createState() => _AddRouteScreenState();
@@ -28,6 +29,75 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
   bool _showValidation = false;
   bool _isSaving = false;
   String? _saveError;
+
+  @override
+  void initState() {
+    super.initState();
+    final route = widget.route;
+    if (route != null) {
+      _nameController.text = route.name;
+      _start = LatLng(route.startLatitude, route.startLongitude);
+      _destination = LatLng(
+        route.destinationLatitude,
+        route.destinationLongitude,
+      );
+      _startController.text =
+          '${route.startLatitude.toStringAsFixed(5)}, ${route.startLongitude.toStringAsFixed(5)}';
+      _destinationController.text =
+          '${route.destinationLatitude.toStringAsFixed(5)}, ${route.destinationLongitude.toStringAsFixed(5)}';
+    }
+  }
+
+  Future<void> _deleteRoute() async {
+    if (_isSaving) return;
+    final route = widget.route;
+    final service = widget.routeService;
+    final userId = widget.userId;
+    if (route == null ||
+        service == null ||
+        userId == null ||
+        route.userId != userId) {
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete route?'),
+        content: Text(
+          'Delete "${route.name}" from your saved routes? This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true || _isSaving) return;
+    setState(() {
+      _isSaving = true;
+      _saveError = null;
+    });
+    try {
+      await service.deleteRoute(userId, route.id);
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _saveError = error is RouteFailure
+              ? error.message
+              : 'Could not delete your route. Please try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -61,7 +131,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
     if (!_formKey.currentState!.validate()) return;
     final service = widget.routeService;
     final userId = widget.userId;
-    if (service == null || userId == null) {
+    if (service == null ||
+        userId == null ||
+        (widget.route != null && widget.route!.userId != userId)) {
       setState(() => _saveError = 'Sign in to save a route.');
       return;
     }
@@ -70,16 +142,18 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
       _saveError = null;
     });
     try {
-      await service.saveRoute(
-        userId,
-        RouteDraft(
-          name: _nameController.text,
-          startLatitude: _start!.latitude,
-          startLongitude: _start!.longitude,
-          destinationLatitude: _destination!.latitude,
-          destinationLongitude: _destination!.longitude,
-        ),
+      final draft = RouteDraft(
+        name: _nameController.text,
+        startLatitude: _start!.latitude,
+        startLongitude: _start!.longitude,
+        destinationLatitude: _destination!.latitude,
+        destinationLongitude: _destination!.longitude,
       );
+      if (widget.route == null) {
+        await service.saveRoute(userId, draft);
+      } else {
+        await service.updateRoute(userId, widget.route!.id, draft);
+      }
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (error) {
@@ -96,60 +170,71 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Add route')),
-      body: SafeArea(
-        child: Form(
-          key: _formKey,
-          autovalidateMode: _showValidation
-              ? AutovalidateMode.onUserInteraction
-              : AutovalidateMode.disabled,
-          child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            children: [
-              TextFormField(
-                enabled: !_isSaving,
-                controller: _nameController,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: _decoration('Route name', 'e.g. Home to School'),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Enter a route name.'
-                    : null,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                'Select route points',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              _buildMap(),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                _selectingStart
-                    ? 'Tap the map to select your starting point.'
-                    : 'Tap the map to select your destination.',
-                style: Theme.of(context).textTheme.labelSmall,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              _buildPointField(isStart: true),
-              const SizedBox(height: AppSpacing.md),
-              _buildPointField(isStart: false),
-              const SizedBox(height: AppSpacing.lg),
-              if (_saveError != null) ...[
+    return PopScope(
+      canPop: !_isSaving,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.route == null ? 'Add route' : 'Edit route'),
+        ),
+        body: SafeArea(
+          child: Form(
+            key: _formKey,
+            autovalidateMode: _showValidation
+                ? AutovalidateMode.onUserInteraction
+                : AutovalidateMode.disabled,
+            child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              children: [
+                TextFormField(
+                  enabled: !_isSaving,
+                  controller: _nameController,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: _decoration('Route name', 'e.g. Home to School'),
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Enter a route name.'
+                      : null,
+                ),
+                const SizedBox(height: AppSpacing.lg),
                 Text(
-                  _saveError!,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: AppColors.errorText),
+                  'Select route points',
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: AppSpacing.sm),
+                _buildMap(),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  _selectingStart
+                      ? 'Tap the map to select your starting point.'
+                      : 'Tap the map to select your destination.',
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _buildPointField(isStart: true),
+                const SizedBox(height: AppSpacing.md),
+                _buildPointField(isStart: false),
+                const SizedBox(height: AppSpacing.lg),
+                if (_saveError != null) ...[
+                  Text(
+                    _saveError!,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: AppColors.errorText),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
+                PrimaryButton(
+                  label: widget.route == null ? 'Save route' : 'Save changes',
+                  onPressed: _saveRoute,
+                  isLoading: _isSaving,
+                ),
+                if (widget.route != null)
+                  TextButton.icon(
+                    onPressed: _isSaving ? null : _deleteRoute,
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Delete route'),
+                  ),
               ],
-              PrimaryButton(
-                label: 'Save route',
-                onPressed: _saveRoute,
-                isLoading: _isSaving,
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -203,6 +288,13 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
           options: MapOptions(
             initialCenter: const LatLng(15.1454, 120.5922),
             initialZoom: 15.2,
+            initialCameraFit: _start == null || _destination == null
+                ? null
+                : CameraFit.bounds(
+                    bounds: LatLngBounds(_start!, _destination!),
+                    padding: const EdgeInsets.all(48),
+                    maxZoom: 16,
+                  ),
             backgroundColor: AppColors.mapSurface,
             onTap: (_, point) => _selectPoint(point),
           ),

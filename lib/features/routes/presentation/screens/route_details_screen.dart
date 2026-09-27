@@ -4,15 +4,25 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../data/route_service.dart';
+import 'add_route_screen.dart';
 import '../../domain/saved_route.dart';
 import '../../domain/route_status.dart';
 import '../widgets/status_badge.dart';
 
 class RouteDetailsScreen extends StatelessWidget {
-  const RouteDetailsScreen({super.key, required this.route, this.status});
+  const RouteDetailsScreen({
+    super.key,
+    required this.route,
+    this.status,
+    this.routeService,
+    this.userId,
+  });
 
   final SavedRoute route;
   final RouteStatus? status;
+  final RouteService? routeService;
+  final String? userId;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +33,31 @@ class RouteDetailsScreen extends StatelessWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Route Details')),
+      appBar: AppBar(
+        title: const Text('Route Details'),
+        actions: [
+          if (routeService != null && userId == route.userId)
+            IconButton(
+              tooltip: 'Edit or delete route',
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () async {
+                final changed = await Navigator.of(context).push<bool>(
+                  MaterialPageRoute(
+                    builder: (_) => AddRouteScreen(
+                      route: route,
+                      routeService: routeService,
+                      userId: userId,
+                    ),
+                  ),
+                );
+                // Return Home so it reloads the route and reassesses its endpoints.
+                if (context.mounted && changed == true) {
+                  Navigator.of(context).pop(true);
+                }
+              },
+            ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(

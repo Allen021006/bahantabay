@@ -1,3 +1,4 @@
+import 'package:bahantabay/features/routes/presentation/screens/add_route_screen.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -84,44 +85,56 @@ Widget _testApp(
 }
 
 void main() {
-  testWidgets('account switch and logout discard open private Route Details', (
-    tester,
-  ) async {
-    final auth = FakeAuthService(
-      hasActiveSession: true,
-      currentUserEmail: 'a@example.com',
-    );
-    addTearDown(auth.dispose);
-    final routes = FakeRouteService()
-      ..routes = [
-        exampleRoute(userId: 'a@example.com', name: 'A private route'),
-        exampleRoute(userId: 'b@example.com', name: 'B private route'),
-      ];
-    await tester.pumpWidget(
-      _testApp(auth, routes: routes, reports: FakeFloodReportService()),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('A private route'));
-    await tester.pumpAndSettle();
-    expect(find.byType(RouteDetailsScreen), findsOneWidget);
-    auth.changeAccount('b@example.com');
-    await tester.pumpAndSettle();
-    expect(find.byType(RouteDetailsScreen, skipOffstage: false), findsNothing);
-    expect(find.text('A private route', skipOffstage: false), findsNothing);
-    await tester.tap(find.text('B private route'));
-    await tester.pumpAndSettle();
-    expect(find.byType(RouteDetailsScreen), findsOneWidget);
-    auth.changeAccount(null);
-    await tester.pumpAndSettle();
-    expect(find.byType(RouteDetailsScreen, skipOffstage: false), findsNothing);
-    await tester.ensureVisible(find.text('Continue as Guest'));
-    await tester.tap(find.text('Continue as Guest'));
-    await tester.pumpAndSettle();
-    expect(find.text('A private route', skipOffstage: false), findsNothing);
-    expect(find.text('B private route', skipOffstage: false), findsNothing);
-    expect(find.byType(BackButton), findsNothing);
-    expect(routes.saveCalls, 0);
-  });
+  testWidgets(
+    'account switch and logout discard private Details and route editor',
+    (tester) async {
+      final auth = FakeAuthService(
+        hasActiveSession: true,
+        currentUserEmail: 'a@example.com',
+      );
+      addTearDown(auth.dispose);
+      final routes = FakeRouteService()
+        ..routes = [
+          exampleRoute(userId: 'a@example.com', name: 'A private route'),
+          exampleRoute(userId: 'b@example.com', name: 'B private route'),
+        ];
+      await tester.pumpWidget(
+        _testApp(auth, routes: routes, reports: FakeFloodReportService()),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('A private route'));
+      await tester.pumpAndSettle();
+      expect(find.byType(RouteDetailsScreen), findsOneWidget);
+      await tester.tap(find.byTooltip('Edit or delete route'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AddRouteScreen), findsOneWidget);
+      auth.changeAccount('b@example.com');
+      await tester.pumpAndSettle();
+      expect(
+        find.byType(RouteDetailsScreen, skipOffstage: false),
+        findsNothing,
+      );
+      expect(find.text('A private route', skipOffstage: false), findsNothing);
+      expect(find.byType(AddRouteScreen, skipOffstage: false), findsNothing);
+      await tester.tap(find.text('B private route'));
+      await tester.pumpAndSettle();
+      expect(find.byType(RouteDetailsScreen), findsOneWidget);
+      auth.changeAccount(null);
+      await tester.pumpAndSettle();
+      expect(
+        find.byType(RouteDetailsScreen, skipOffstage: false),
+        findsNothing,
+      );
+      await tester.ensureVisible(find.text('Continue as Guest'));
+      await tester.tap(find.text('Continue as Guest'));
+      await tester.pumpAndSettle();
+      expect(find.text('A private route', skipOffstage: false), findsNothing);
+      expect(find.byType(AddRouteScreen, skipOffstage: false), findsNothing);
+      expect(find.text('B private route', skipOffstage: false), findsNothing);
+      expect(find.byType(BackButton), findsNothing);
+      expect(routes.saveCalls, 0);
+    },
+  );
 
   testWidgets(
     'account change discards report draft while public reports remain readable',

@@ -57,6 +57,49 @@ Widget _testApp({
 }
 
 void main() {
+  testWidgets('edit and delete an owned route return Home and refresh', (
+    tester,
+  ) async {
+    usePhoneSize(tester);
+    final service = FakeRouteService()..routes = [exampleRoute()];
+    await tester.pumpWidget(_testApp(isGuest: false, routeService: service));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(RouteCard));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Edit or delete route'));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit route'), findsOneWidget);
+    expect(find.text('School route'), findsOneWidget);
+    expect(find.byType(PolylineLayer), findsOneWidget);
+    await tester.enterText(find.byType(TextFormField).first, 'Updated route');
+    await tester.ensureVisible(find.text('Save changes'));
+    await tester.tap(find.text('Save changes'));
+    await tester.pumpAndSettle();
+    expect(service.updateCalls, 1);
+    expect(service.saveCalls, 0);
+    expect(find.byType(RouteDetailsScreen), findsNothing);
+    expect(find.text('Updated route'), findsOneWidget);
+    expect(service.lastDraft!.startLatitude, exampleRoute().startLatitude);
+    await tester.tap(find.byType(RouteCard));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Edit or delete route'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Delete route'));
+    await tester.tap(find.text('Delete route'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(service.deleteCalls, 0);
+    await tester.tap(find.text('Delete route'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    expect(service.deleteCalls, 1);
+    expect(find.byType(AddRouteScreen), findsNothing);
+    expect(find.byType(RouteDetailsScreen), findsNothing);
+    expect(find.text('No saved routes yet.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   for (final status in RouteStatus.values) {
     testWidgets('real List, Map and Details agree on ${status.label}', (
       tester,

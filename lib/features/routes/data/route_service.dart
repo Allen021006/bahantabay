@@ -10,6 +10,8 @@ class RouteFailure implements Exception {
 abstract interface class RouteService {
   Future<List<SavedRoute>> fetchRoutes(String userId);
   Future<void> saveRoute(String userId, RouteDraft draft);
+  Future<void> updateRoute(String userId, String routeId, RouteDraft draft);
+  Future<void> deleteRoute(String userId, String routeId);
 }
 
 class SupabaseRouteService implements RouteService {
@@ -55,6 +57,56 @@ class SupabaseRouteService implements RouteService {
       throw const RouteFailure(
         'Could not confirm the save. Check your connection and retry. '
         'If the connection dropped, check Home first to avoid a duplicate.',
+      );
+    }
+  }
+
+  @override
+  Future<void> updateRoute(
+    String userId,
+    String routeId,
+    RouteDraft draft,
+  ) async {
+    _requireUser(userId);
+    try {
+      final rows = await _client
+          .from('routes')
+          .update(draft.toInsertMap())
+          .eq('id', routeId)
+          .eq('user_id', userId)
+          .select('id');
+      _requireUser(userId);
+      if (rows.length != 1) {
+        throw const RouteFailure('Route no longer available. Refresh Home.');
+      }
+    } on RouteFailure {
+      rethrow;
+    } catch (_) {
+      throw const RouteFailure(
+        'Could not confirm the update. Check Home before retrying.',
+      );
+    }
+  }
+
+  @override
+  Future<void> deleteRoute(String userId, String routeId) async {
+    _requireUser(userId);
+    try {
+      final rows = await _client
+          .from('routes')
+          .delete()
+          .eq('id', routeId)
+          .eq('user_id', userId)
+          .select('id');
+      _requireUser(userId);
+      if (rows.length != 1) {
+        throw const RouteFailure('Route no longer available. Refresh Home.');
+      }
+    } on RouteFailure {
+      rethrow;
+    } catch (_) {
+      throw const RouteFailure(
+        'Could not confirm deletion. Check Home before retrying.',
       );
     }
   }

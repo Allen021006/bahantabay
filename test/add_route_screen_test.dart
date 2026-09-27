@@ -8,6 +8,51 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets(
+    'edit pending and failure preserve draft; delete failure is recoverable',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final pending = Completer<void>();
+      final service = FakeRouteService()..routes = [exampleRoute()];
+      service.onUpdate = () => pending.future;
+      service.onDelete = () async => throw const RouteFailure('Delete failed.');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: AddRouteScreen(
+            route: exampleRoute(),
+            userId: 'user-a',
+            routeService: service,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).first, 'Keep draft');
+      await tester.ensureVisible(find.text('Save changes'));
+      await tester.tap(find.text('Save changes'));
+      await tester.pump();
+      expect(service.updateCalls, 1);
+      expect(
+        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        isNull,
+      );
+      pending.completeError(const RouteFailure('Update failed.'));
+      await tester.pumpAndSettle();
+      expect(find.text('Update failed.'), findsOneWidget);
+      expect(find.text('Keep draft'), findsOneWidget);
+      await tester.ensureVisible(find.text('Delete route'));
+      await tester.tap(find.text('Delete route'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete failed.'), findsOneWidget);
+      expect(find.byType(AddRouteScreen), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
   Future<void> openScreen(WidgetTester tester, {RouteService? service}) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;

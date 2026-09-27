@@ -230,14 +230,20 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted && saved == true) await _loadRoutes();
   }
 
-  void _openRouteDetails(SavedRoute route) {
+  Future<void> _openRouteDetails(SavedRoute route) async {
     if (widget.isGuest || route.userId != widget.userId) return;
     final status = _assessRoute(route);
-    Navigator.of(context).push<void>(
+    final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => RouteDetailsScreen(route: route, status: status),
+        builder: (_) => RouteDetailsScreen(
+          route: route,
+          status: status,
+          routeService: widget.routeService,
+          userId: widget.userId,
+        ),
       ),
     );
+    if (mounted && changed == true) await _loadRoutes();
   }
 
   RouteStatus? _assessRoute(SavedRoute route) {

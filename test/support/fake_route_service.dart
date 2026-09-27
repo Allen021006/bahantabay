@@ -37,4 +37,44 @@ class FakeRouteService implements RouteService {
     if (onSave != null) await onSave!();
     routes.add(exampleRoute(userId: userId, name: draft.name.trim()));
   }
+
+  int updateCalls = 0;
+  int deleteCalls = 0;
+  Future<void> Function()? onUpdate;
+  Future<void> Function()? onDelete;
+
+  @override
+  Future<void> updateRoute(
+    String userId,
+    String routeId,
+    RouteDraft draft,
+  ) async {
+    updateCalls++;
+    lastDraft = draft;
+    if (onUpdate != null) await onUpdate!();
+    final index = routes.indexWhere(
+      (r) => r.id == routeId && r.userId == userId,
+    );
+    if (index < 0) {
+      throw const RouteFailure('Route no longer available. Refresh Home.');
+    }
+    final previous = routes[index];
+    routes[index] = SavedRoute(
+      id: previous.id,
+      userId: previous.userId,
+      createdAt: previous.createdAt,
+      name: draft.name.trim(),
+      startLatitude: draft.startLatitude,
+      startLongitude: draft.startLongitude,
+      destinationLatitude: draft.destinationLatitude,
+      destinationLongitude: draft.destinationLongitude,
+    );
+  }
+
+  @override
+  Future<void> deleteRoute(String userId, String routeId) async {
+    deleteCalls++;
+    if (onDelete != null) await onDelete!();
+    routes.removeWhere((r) => r.id == routeId && r.userId == userId);
+  }
 }
