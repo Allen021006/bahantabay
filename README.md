@@ -77,7 +77,7 @@ flutter analyze
 flutter test
 ```
 
-The last recorded validation after route-status integration reported **78 passing tests**, no issues from `flutter analyze`, and a passing `git diff --check`. Automated tests use test doubles/local fixtures without live Supabase credentials and do not replace manual backend verification.
+The last recorded validation for saved-route editing and deletion (`9c837fd`) reported **84 passing tests**, no issues from `flutter analyze`, and a passing `git diff --check`. Automated tests use test doubles/local fixtures without live Supabase credentials and do not replace manual backend verification.
 
 ## Features and usage
 
@@ -87,9 +87,11 @@ The locked MVP contains exactly five functional screens. Home List/Map are two s
 | --- | --- |
 | **1. Sign In / Guest Entry** | Sign in with email/password, switch to Sign Up on the same screen, or continue as Guest. |
 | **2. Home** | View private saved routes with calculated status after reports successfully load; switch List/Map and open Route Details. Both states use the same assessment. The account menu supports logout, account switching, or leaving Guest mode to sign in. Guests see labelled demo routes with separate hard-coded statuses and cannot save routes or report floods. |
-| **3. Add Route** | Signed-in users enter a name, select start/destination points on the map, and save. Success returns to Home and refreshes routes. Supabase preserves each owner's private routes. |
-| **4. Route Details** | Open a real saved route from Home List or Home Map's View action. Inspect its name, start/destination coordinates, map and supplied status. Back preserves the expected Home state. Status is a nullable snapshot from Home, with no independent report fetch or recalculation. |
+| **3. Add Route** | Signed-in users enter a name, select start/destination points on the map, and save. Success returns to Home and refreshes routes. Supabase preserves each owner's private routes. The same form supports Edit route mode with prefilled name/endpoints. |
+| **4. Route Details** | Open a real saved route from Home List or Home Map's View action. Inspect its name, start/destination coordinates, map and supplied status. Use the pencil icon to edit the route name/endpoints or delete the route with confirmation. Successful changes return to Home and reload routes for reassessment; leaving the editor with Back returns to Details without saving. Cancelling deletion keeps the editor open. Back preserves the expected Home state. Status is a nullable snapshot from Home, with no independent report fetch or recalculation. |
 | **5. Report Flood** | Signed-in users select a map location, Ankle/Knee/Waist/Chest depth, Passable/Not passable, and optional notes. Successful submission returns to Home and reloads reports. Live Supabase verification is complete. |
+
+Saved-route editing/deletion was added in [9c837fd](https://github.com/Allen021006/bahantabay/commit/9c837fd). It reuses the existing owner-only permissions, adds no functional screen, and does not affect public flood reports. Live Supabase edit/delete verification is still pending.
 
 Reporting validates required inputs, prevents duplicate presses while submitting, and preserves the draft on failure. Notes are public, have a 1,000-character client limit, and must not contain personal information. Home displays coordinates, depth, passability, notes and time without displaying reporter identities.
 
@@ -129,7 +131,7 @@ docs/assets/                  Design assets, mockups and current runtime capture
 
 ### Runtime screenshots
 
-These earlier runtime captures show four application screens, including both presentation states of Home. They predate Route Details and calculated route status, so they are historical runtime UI evidence rather than a complete view of the current application or proof of backend operations. Updated Home/status and Route Details captures are still needed.
+These runtime captures cover the five functional screens, including both presentation states of Home. They are UI evidence, not proof of backend operations. The newly added edit/delete controls are not documented by these earlier captures; updated captures of those controls are still needed.
 
 #### Sign In / Guest Entry
 
