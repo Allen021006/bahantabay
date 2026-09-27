@@ -269,7 +269,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(RouteDetailsScreen), findsNothing);
     expect(
-      find.text('Route Details will be connected in a later phase.'),
+      find.text(
+        'This is a demo route. Sign in and save your own route to view its details.',
+      ),
       findsOneWidget,
     );
     await tester.tap(find.text('Map'));

@@ -277,9 +277,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showLaterMessage(String feature) {
+  void _showDemoRouteMessage() {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$feature will be connected in a later phase.')),
+      const SnackBar(
+        content: Text(
+          'This is a demo route. Sign in and save your own route to view its details.',
+        ),
+      ),
     );
   }
 
@@ -460,7 +464,7 @@ class _HomeScreenState extends State<HomeScreen> {
             startLabel: 'St. Ignatius Subd.',
             endLabel: 'Holy Angel University',
             status: RouteStatus.warning,
-            onTap: () => _showLaterMessage('Route Details'),
+            onTap: () => _showDemoRouteMessage(),
           ),
           const SizedBox(height: AppSpacing.sm),
           RouteCard(
@@ -468,7 +472,7 @@ class _HomeScreenState extends State<HomeScreen> {
             startLabel: 'Fiesta Community',
             endLabel: 'Angeles University Foundation',
             status: RouteStatus.clear,
-            onTap: () => _showLaterMessage('Route Details'),
+            onTap: () => _showDemoRouteMessage(),
           ),
         ] else
           const Material(
@@ -690,7 +694,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             TextButton(
               onPressed: () => selected == null
-                  ? _showLaterMessage('Route Details')
+                  ? _showDemoRouteMessage()
                   : _openRouteDetails(selected),
               child: const Text('View'),
             ),
