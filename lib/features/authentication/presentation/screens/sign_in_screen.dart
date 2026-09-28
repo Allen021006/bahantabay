@@ -57,6 +57,7 @@ class _SignInScreenState extends State<SignInScreen> {
         _emailController.text.trim(),
         _passwordController.text,
       );
+
       if (!mounted) return;
       setState(() {
         _authMessage = message;
@@ -192,11 +193,17 @@ class _SignInScreenState extends State<SignInScreen> {
                       _hidePassword = !_hidePassword;
                     });
                   },
-                  icon: Icon(
-                    _hidePassword
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
-                    color: AppColors.mutedText,
+                  icon: AnimatedSwitcher(
+                    duration: MediaQuery.disableAnimationsOf(context)
+                        ? Duration.zero
+                        : const Duration(milliseconds: 150),
+                    child: Icon(
+                      _hidePassword
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      key: ValueKey(_hidePassword),
+                      color: AppColors.mutedText,
+                    ),
                   ),
                 ),
               ),

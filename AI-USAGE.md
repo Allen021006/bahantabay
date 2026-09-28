@@ -883,6 +883,42 @@ My contribution was identifying the issues, requesting the changes, and acceptin
 - [f5937af — fix: clarify guest demo route details message](https://github.com/Allen021006/bahantabay/commit/f5937af)
 - [0ac1bff — fix: improve Home view selector contrast](https://github.com/Allen021006/bahantabay/commit/0ac1bff)
 
+## Phase 13D-1 — Password visibility icon crossfade
+
+**Date:** September 28, 2026
+
+**Tool:** Codex
+
+**Status:** Implementation reviewed and four focused Sign In tests passing. Manual interaction and viewport checks have not yet been confirmed. No commit or push was performed by Codex for this task.
+
+### What I asked AI to help with
+
+I asked Codex to act as a mentor, reviewer, and planner for Phase 13D so that I could personally write the UI polish implementation. Codex inspected the application architecture, screens, reusable components, theme, dependencies, and relevant tests, then suggested one small exercise: a crossfade for the existing password visibility icon.
+
+Codex explained AnimatedSwitcher, child keys, animation timing, reduced-motion preferences, and test ideas. It provided guidance rather than a complete feature implementation.
+
+### What I wrote
+
+I implemented the animation in `lib/features/authentication/presentation/screens/sign_in_screen.dart`. Only the icon inside the existing IconButton is wrapped in AnimatedSwitcher, with a ValueKey based on the password visibility state. The transition lasts 150 milliseconds, or uses Duration.zero when MediaQuery.disableAnimationsOf(context) is true. Password visibility and the tooltip still change immediately.
+
+I also wrote the normal-motion and reduced-motion tests in `test/sign_in_screen_test.dart` using Codex's guidance. They check visibility, tooltip changes, preservation of the entered password, and the final icon state. Authentication behavior, validation, navigation, and the shared design system were not changed for this exercise.
+
+### Where AI guidance needed correction
+
+The normal-motion test initially failed because the outgoing icon remained in the widget tree after pumping exactly 150 milliseconds. Codex first suggested an additional untimed startup pump, but that did not resolve the failure.
+
+After inspecting the installed Flutter source, Codex identified that the animation completion check requires elapsed time to be greater than the duration. An icon can therefore be fully transparent at the exact boundary while still being found by the test. AnimatedSwitcher removes the outgoing child after receiving the dismissed status.
+
+I then explicitly asked Codex to apply the timing correction. Codex added a 1 millisecond pump after each of the two 150 millisecond pumps, with explanatory comments. These two timing adjustments are Codex-authored; the application animation and the test cases were written by me with AI guidance.
+
+### Validation and authorship
+
+Before the new tests were added, I reported successful Dart formatting, flutter analyze with no issues, and eight passing tests across the existing Sign In and AuthGate test files. After applying the timing correction, Codex ran `flutter test test/sign_in_screen_test.dart`; all four tests passed. The diff check reported no whitespace errors, only LF-to-CRLF conversion warnings. A full test-suite run and post-test-edit analysis are not claimed here.
+
+Manual checks for rapid toggling, keyboard activation, and layout stability at 360 × 800 in both authentication modes remain unconfirmed. I also asked why the change was not visually obvious; Codex clarified that it only adds a brief icon crossfade, not new password behavior or a page redesign. This was a small learning exercise, not completion of the wider Phase 13D polish work.
+
+At my request, Codex wrote this documentation entry. No commit reference is recorded yet. This entry distinguishes my AI-guided implementation and tests from Codex's direct test-timing edits and documentation assistance.
+
 ## Final integration and deployment
 
 **Status:** Pending.
