@@ -1,3 +1,4 @@
+import 'package:bahantabay/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:bahantabay/features/routes/data/route_service.dart';
@@ -415,6 +416,18 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.byType(FlutterMap), findsOneWidget);
     expect(find.text('Saved routes'), findsNothing);
+    final selector = tester.widget<SegmentedButton<HomeView>>(
+      find.byType(SegmentedButton<HomeView>),
+    );
+    expect(
+      selector.style!.backgroundColor!.resolve({}),
+      AppColors.scaffoldBackground,
+    );
+    expect(selector.style!.foregroundColor!.resolve({}), AppColors.ink);
+    expect(
+      selector.style!.backgroundColor!.resolve({WidgetState.selected}),
+      AppColors.warning,
+    );
 
     await tester.tap(find.text('List'));
     await tester.pump();

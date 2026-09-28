@@ -395,6 +395,12 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
         child: Center(
           child: SegmentedButton<HomeView>(
+            style: SegmentedButton.styleFrom(
+              backgroundColor: AppColors.scaffoldBackground,
+              foregroundColor: AppColors.ink,
+              selectedBackgroundColor: AppColors.warning,
+              selectedForegroundColor: AppColors.ink,
+            ),
             segments: const [
               ButtonSegment(
                 value: HomeView.list,
