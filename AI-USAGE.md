@@ -855,6 +855,34 @@ I requested guidance, authored and verified the codebase changes, and pushed com
 
 [9c837fd — feat: add saved route editing and deletion](https://github.com/Allen021006/bahantabay/commit/9c837fd)
 
+## Home Guest message and view-selector contrast fixes
+
+**Commit dates:** September 27–28, 2026
+
+**Tool:** Codex
+
+### What I asked AI to help with
+
+I noticed that tapping a Guest demo route still said Route Details would be connected in a later phase, even though Route Details was already implemented for authenticated saved routes. I asked Codex to correct that message. Later, I noticed that the inactive List segment was difficult to see against the Flood Blue background in Map view and asked for a lighter color from the existing palette.
+
+### What Codex changed
+
+Both fixes changed only `lib/features/home/presentation/screens/home_screen.dart` and `test/home_screen_test.dart`.
+
+- **Guest message:** Codex replaced the outdated placeholder with “This is a demo route. Sign in and save your own route to view its details.” Guest List and Map use the same message. Guest restrictions and navigation were unchanged.
+- **Selector contrast:** Codex set the inactive segment to Mist Grey with Ink Navy text/icons and retained Warning Amber for the selected segment. It used existing palette tokens without changing the selector size or List/Map behavior.
+
+### Validation and authorship
+
+Codex implemented both fixes and their test changes, formatted the changed Dart files, and ran the checks. For the Guest-message fix, `flutter analyze` was clean, all **22 Home tests** passed, and `git diff --check` passed. For the contrast fix, analysis was clean, all **23 Home tests** passed, and the diff check passed. These are the focused test results from each change, not claims that the full suite was rerun for either fix.
+
+My contribution was identifying the issues, requesting the changes, and accepting them. I handled the Guest-message commit and subsequent Git synchronization/push steps. At my request, Codex created the local contrast commit; I handled the subsequent synchronization. These implementation and test changes are Codex-authored, not evidence of independently student-written code. This entry does not claim a new live deployment verification.
+
+### Commit evidence
+
+- [f5937af — fix: clarify guest demo route details message](https://github.com/Allen021006/bahantabay/commit/f5937af)
+- [0ac1bff — fix: improve Home view selector contrast](https://github.com/Allen021006/bahantabay/commit/0ac1bff)
+
 ## Final integration and deployment
 
 **Status:** Pending.
