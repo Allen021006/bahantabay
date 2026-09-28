@@ -2,7 +2,7 @@
 
 This repository is public. This document records the current security and privacy practices used by Bahantabay and will be updated as the backend and deployment are completed.
 
-**Documentation reviewed:** 2026-09-27. Live verification below is based on the project owner's recorded checks, not a new backend audit performed during this documentation update.
+**Documentation reviewed:** 2026-09-28. Live verification below is based on the project owner's recorded checks, not a new backend audit performed during this documentation update.
 
 **Privacy correction applied and verified by the project owner:** The client selects only public report fields and does not store fetched reporter IDs. The owner manually applied `supabase/migrations/20260923000000_restrict_flood_report_public_columns.sql`, inspected effective privileges, and verified public reads and authenticated submission afterward. Both client roles are restricted from selecting reporter IDs. The earlier dated status below is retained as a historical snapshot.
 
@@ -11,7 +11,7 @@ This repository is public. This document records the current security and privac
 | Data | Where it lives | Who can see it |
 | --- | --- | --- |
 | User authentication account and session | Supabase Authentication | The authenticated user; authentication is managed by Supabase |
-| Saved routes | Supabase PostgreSQL; Phase 9 client fetch/insert implemented | Authenticated owner, enforced by RLS |
+| Saved routes | Supabase PostgreSQL; client fetch/insert/update/delete implemented | Authenticated owner, enforced by RLS |
 | Route start and destination coordinates | Supabase PostgreSQL | Same owner-only access as the saved route |
 | Community flood reports | Supabase PostgreSQL; Phase 10 client fetch/insert implemented | Public reads and authenticated owner inserts, enforced by RLS |
 | Flood location coordinates | Supabase PostgreSQL; shown in Home entries and map markers | Publicly readable with the associated report |
@@ -50,11 +50,13 @@ The applied migrations define the following access model:
 
 - A signed-in user can create a route associated with their own authenticated user ID.
 - A user can read their own saved routes.
+- The edit/delete flow (`9c837fd`) reuses existing owner-only RLS and column grants. Updates change only the name and four endpoint coordinates. Both update/delete requests filter by route ID and owner ID, check the active session before and after the request, and require one returned ID to confirm success. Raw backend errors are not shown.
+- Deletion requires confirmation. Pending mutations disable submission actions; failures keep the editor open. Successful changes return to Home and reload routes for reassessment. Guests have no edit/delete flow.
 - A user cannot create a saved route on behalf of another user.
 - A user cannot modify or delete another user's saved routes.
 - Guest users cannot create or modify saved routes.
 - The route service checks the active session ID, filters reads by owner ID, and supplies that same ID on inserts for RLS validation. IDs and creation timestamps are left to database defaults.
-- Switching accounts/signing out discards the old Home state and open Add Route draft. Old asynchronous results cannot populate a new account's route list.
+- Switching accounts/signing out discards the old Home state and open Add Route/Edit route draft. Old asynchronous results cannot populate a new account's route list.
 - Guest Home keeps read-only demo routes and does not fetch private routes. Real saved routes are assessed from successfully loaded reports within 200 meters of the bounded straight-line route: passable means WARNING, not passable means NOT PASSABLE (highest severity), and no relevant severity-raising report means SAFE. Loading/error remains “Status not assessed”. SAFE is not a guarantee of real-world safety. Route Details receives Home's assessment snapshot; no status is stored in the database.
 
 ### Community flood reports
@@ -99,6 +101,8 @@ See [database setup and verification](../supabase/README.md) for the Phase 8 set
 - [x] External GitHub Actions pinned to verified full commit SHAs.
 - [x] Analyze/test failures block deployment; missing/empty Supabase build values stop the build. Informational analyzer diagnostics remain nonfatal.
 - [x] Actions build and Pages deployment for `1f3a49d` passed (project owner confirmation).
+- [x] Saved-route edit/delete service and widget tests passed, including ownership filters, confirmation/cancellation, failure handling and account-switch editor disposal.
+- [ ] Manually verify saved-route editing, refreshed persistence, deletion and owner isolation against live Supabase for `9c837fd`.
 - [ ] Complete final live production browser/authentication and end-to-end flow checks.
 - [ ] Review all final screenshots for real personal data.
 - [ ] Review the final demo video for real personal data.

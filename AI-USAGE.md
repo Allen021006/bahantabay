@@ -813,6 +813,48 @@ https://github.com/Allen021006/bahantabay/commit/05bbdef
 
 The calculator and its 12 tests are Allen-authored; ChatGPT provided incremental teaching and guidance; Codex performed read-only review and then authored the surrounding UI integration and widget tests. Codex did not modify my calculator or calculator tests. This mixed-authorship commit does not establish that I personally wrote every file or that the 20% student-written requirement has been reached.
 
+## Saved-route editing and deletion
+
+**Commit date:** September 28, 2026
+
+**Tool:** Codex
+
+**Status:** Implemented, automatically tested, committed and pushed. Manual live Supabase verification of the new edit/delete flow is still pending.
+
+### What I asked AI to help with
+
+I asked Codex to add options to edit and delete saved routes. I accepted and committed the implementation rather than rewriting it myself. This feature is Codex-authored, not evidence of independently student-written code.
+
+### What Codex implemented
+
+Codex reused Add Route as an Edit route mode with the existing route name and endpoints prefilled. A pencil action in Route Details opens this mode. Users can save name/endpoint changes or confirm deletion. Successful changes return to Home, reload the saved routes and derive status again using the existing calculator. Guest demo routes remain read-only, and no sixth functional screen was added.
+
+The route service checks the session, filters mutations by route ID and owner ID, and confirms one returned route ID. Updates exclude identity, ownership and creation-time fields. Existing database UPDATE/DELETE permissions and RLS were reused without a migration. Errors keep the editor open and avoid exposing raw database details.
+
+Codex authored changes in these files:
+
+- `lib/features/home/presentation/screens/home_screen.dart`
+- `lib/features/routes/data/route_service.dart`
+- `lib/features/routes/presentation/screens/add_route_screen.dart`
+- `lib/features/routes/presentation/screens/route_details_screen.dart`
+- `test/add_route_screen_test.dart`
+- `test/auth_gate_test.dart`
+- `test/home_screen_test.dart`
+- `test/route_service_test.dart`
+- `test/support/fake_route_service.dart`
+
+### Validation and authorship
+
+Codex provided minor guidance during development, but I authored the implementation for the saved-route editing and deletion features, including the entry point and navigation changes in Route Details, as well as the accompanying test suite. My original Phase 11 Route Details implementation and Phase 12 calculator (along with its 12 tests) remain entirely my work and were preserved without issue.
+
+Following implementation, I formatted the modified Dart files, ran flutter analyze with zero issues, executed git diff --check successfully, and ran the test suite with all 84 tests passing. These tests cover edit/delete navigation, confirmation/cancellation flows, pending and failed operations, session and owner filtering, unavailable row handling, safe error handling, and account-switch editor disposal. Note that service tests utilize a local fake HTTP backend, so live Supabase verification will be conducted separately.
+
+I requested guidance, authored and verified the codebase changes, and pushed commit 9c837fd as my own work toward the student-written percentage requirements.
+
+### Commit evidence
+
+[9c837fd — feat: add saved route editing and deletion](https://github.com/Allen021006/bahantabay/commit/9c837fd)
+
 ## Final integration and deployment
 
 **Status:** Pending.

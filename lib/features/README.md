@@ -21,6 +21,12 @@ Guest entry. Home loads saved routes and public flood reports, derives route
 status with `routes/domain/route_status_calculator.dart`, and passes the selected
 route and assessed status to Route Details. Loading/error states stay unassessed.
 
+The pencil action in Route Details opens `AddRouteScreen` in Edit route mode
+with the selected route prefilled. It supports name/endpoint changes and
+confirmed deletion through `RouteService`. Successful mutations return to Home
+and reload routes for reassessment. This reuses an existing screen; Guest demo
+routes remain read-only.
+
 Application wiring lives under `lib/app/`. Shared configuration, theme, spacing
 and reusable widgets live under `lib/core/`. State remains in the existing
 widgets and services without a separate state-management package.

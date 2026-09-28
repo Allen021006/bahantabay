@@ -2,6 +2,10 @@
 
 Status reviewed September 27, 2026: The project owner confirms both the initial schema/RLS and `20260923000000_restrict_flood_report_public_columns.sql` were manually applied to the live project. Effective privileges and application behavior were checked after the privacy correction, including public reads and authenticated submission. This documentation update does not run migrations or claim a new live test. A full run of the updated rollback-only SQL script and explicit denied reporter/wildcard API requests are not recorded as completed here.
 
+## Saved-route editing and deletion
+
+The client now uses the existing owner-only route UPDATE and DELETE permissions (`9c837fd`). No migration or policy change was required. Updates send only the route name and four coordinate fields; both operations filter by route ID and owner ID, check the session, and require one returned route ID to confirm success. Live Supabase verification of this new client flow is pending; earlier route creation and RLS checks are not a substitute.
+
 ## Privacy correction for the existing database
 
 The existing project has already applied this correction. The steps below are for databases that have not yet received it; do not rerun already-applied migrations.
