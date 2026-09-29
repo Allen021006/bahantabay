@@ -57,6 +57,9 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _mapViewKey = ValueKey<String>('home-map-view');
   HomeView _selectedView = HomeView.list;
   List<SavedRoute> _routes = [];
+  // Store the ID, not the SavedRoute: route objects are replaced on every
+  // reload, and the ID is resolved against the current `_routes` when needed.
+  String? _selectedRouteId;
   bool _loadingRoutes = false;
   String? _routeError;
   int _loadVersion = 0;
@@ -78,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (oldWidget.userId != widget.userId ||
         oldWidget.isGuest != widget.isGuest ||
         oldWidget.routeService != widget.routeService) {
+      _selectedRouteId = null;
       _loadRoutes();
     }
     if (oldWidget.floodReportService != widget.floodReportService ||
@@ -203,10 +207,13 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       final routes = await service.fetchRoutes(userId);
       if (!mounted || version != _loadVersion) return;
-      setState(
-        () =>
-            _routes = routes.where((route) => route.userId == userId).toList(),
-      );
+      setState(() {
+        _routes = routes.where((route) => route.userId == userId).toList();
+        // A refresh may have removed the selected route; fall back to default.
+        if (!_routes.any((route) => route.id == _selectedRouteId)) {
+          _selectedRouteId = null;
+        }
+      });
     } catch (error) {
       if (!mounted || version != _loadVersion) return;
       setState(
@@ -586,8 +593,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Resolves the selected ID against the current routes. Falls back to the
+  /// first route when nothing is selected or the selected route is gone.
+  SavedRoute? _resolveSelectedRoute() {
+    if (_routes.isEmpty) return null;
+    for (final route in _routes) {
+      if (route.id == _selectedRouteId) return route;
+    }
+    return _routes.first;
+  }
+
   Widget _buildMapView() {
-    final selected = _routes.isEmpty ? null : _routes.first;
+    final selected = _resolveSelectedRoute();
     final showDemoRoute = widget.isGuest && widget.showDemoData;
     final start = showDemoRoute
         ? _routeStart
@@ -602,9 +619,14 @@ class _HomeScreenState extends State<HomeScreen> {
     return Stack(
       children: [
         FlutterMap(
-          key: ValueKey(
-            'home-map-${selected?.id ?? (showDemoRoute ? 'demo' : _reports.firstOrNull?.id ?? 'empty')}',
-          ),
+          key: ValueKey((
+            selected?.id ??
+                (showDemoRoute ? 'demo' : _reports.firstOrNull?.id ?? 'empty'),
+            start?.latitude,
+            start?.longitude,
+            destination?.latitude,
+            destination?.longitude,
+          )),
           options: MapOptions(
             initialCenter: start == null && _reports.isNotEmpty
                 ? LatLng(_reports.first.latitude, _reports.first.longitude)
@@ -737,6 +759,28 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSelectedRouteCard(SavedRoute? selected) {
+    final canChooseRoute =
+        selected != null && !widget.isGuest && _routes.length > 1;
+    final routeSummary = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          selected?.name ?? 'School route (demo)',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        Text(
+          selected == null
+              ? 'St. Ignatius Subd. to Holy Angel University'
+              : _assessRoute(selected)?.label ?? 'Status not assessed',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    );
     return Material(
       key: const Key('selected-route-warning-card'),
       color: AppColors.surface,
@@ -750,25 +794,53 @@ class _HomeScreenState extends State<HomeScreen> {
               const StatusBadge(status: RouteStatus.warning),
             const SizedBox(width: AppSpacing.md),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    selected?.name ?? 'School route (demo)',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  Text(
-                    selected == null
-                        ? 'St. Ignatius Subd. to Holy Angel University'
-                        : _assessRoute(selected)?.label ??
-                              'Status not assessed',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
+              child: canChooseRoute
+                  ? PopupMenuButton<String>(
+                      key: const Key('map-route-chooser'),
+                      tooltip: 'Choose saved route',
+                      initialValue: selected.id,
+                      borderRadius: BorderRadius.circular(8),
+                      constraints: const BoxConstraints(
+                        minWidth: 220,
+                        maxWidth: 360,
+                        maxHeight: 280,
+                      ),
+                      // Place the route list above the bottom card in the
+                      // available map space, with a scrollable height cap.
+                      offset: Offset(
+                        0,
+                        -(_routes.length * 48.0 + 16.0)
+                                .clamp(0.0, 280.0)
+                                .toDouble() -
+                            AppSpacing.sm -
+                            AppSpacing.lg,
+                      ),
+                      itemBuilder: (context) => [
+                        for (final route in _routes)
+                          CheckedPopupMenuItem<String>(
+                            value: route.id,
+                            checked: route.id == selected.id,
+                            child: Text(
+                              route.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                      onSelected: (id) => setState(() => _selectedRouteId = id),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.xs,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(child: routeSummary),
+                            const Icon(Icons.keyboard_arrow_up),
+                          ],
+                        ),
+                      ),
+                    )
+                  : routeSummary,
             ),
             TextButton(
               onPressed: () => selected == null

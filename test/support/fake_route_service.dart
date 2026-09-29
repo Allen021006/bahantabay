@@ -2,16 +2,21 @@ import 'package:bahantabay/features/routes/data/route_service.dart';
 import 'package:bahantabay/features/routes/domain/saved_route.dart';
 
 SavedRoute exampleRoute({
+  String id = 'route-1',
   String userId = 'user-a',
   String name = 'School route',
+  double startLatitude = 15.1458,
+  double startLongitude = 120.5887,
+  double destinationLatitude = 15.145,
+  double destinationLongitude = 120.5957,
 }) => SavedRoute(
-  id: 'route-1',
+  id: id,
   userId: userId,
   name: name,
-  startLatitude: 15.1458,
-  startLongitude: 120.5887,
-  destinationLatitude: 15.145,
-  destinationLongitude: 120.5957,
+  startLatitude: startLatitude,
+  startLongitude: startLongitude,
+  destinationLatitude: destinationLatitude,
+  destinationLongitude: destinationLongitude,
   createdAt: DateTime.utc(2026, 9, 15),
 );
 

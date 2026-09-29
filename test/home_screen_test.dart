@@ -41,7 +41,10 @@ Widget _testApp({
           routeService ??
           (FakeRouteService()
             ..routes = showDemoData
-                ? [exampleRoute(), exampleRoute(name: 'Work route')]
+                ? [
+                    exampleRoute(),
+                    exampleRoute(id: 'route-2', name: 'Work route'),
+                  ]
                 : []),
       floodReportService:
           floodReportService ??
@@ -251,7 +254,10 @@ void main() {
       tester,
     ) async {
       final service = FakeRouteService()
-        ..routes = [exampleRoute(), exampleRoute(name: 'Work route')];
+        ..routes = [
+          exampleRoute(),
+          exampleRoute(id: 'route-2', name: 'Work route'),
+        ];
       await tester.pumpWidget(_testApp(isGuest: false, routeService: service));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(RouteCard).at(index));
@@ -276,7 +282,10 @@ void main() {
     tester,
   ) async {
     final service = FakeRouteService()
-      ..routes = [exampleRoute(), exampleRoute(name: 'Work route')];
+      ..routes = [
+        exampleRoute(),
+        exampleRoute(id: 'route-2', name: 'Work route'),
+      ];
     await tester.pumpWidget(_testApp(isGuest: false, routeService: service));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Map'));
@@ -301,6 +310,306 @@ void main() {
     expect(find.byType(FlutterMap), findsOneWidget);
     expect(service.fetchCalls, 1);
     expect(service.saveCalls, 0);
+  });
+
+  testWidgets('bottom route card chooses the Map line and Details route', (
+    tester,
+  ) async {
+    usePhoneSize(tester);
+    final first = exampleRoute();
+    final second = exampleRoute(
+      id: 'route-2',
+      name: 'Work route',
+      startLatitude: 15.16,
+      startLongitude: 120.6,
+      destinationLatitude: 15.17,
+      destinationLongitude: 120.61,
+    );
+    final service = FakeRouteService()..routes = [first, second];
+    await tester.pumpWidget(
+      _testApp(
+        isGuest: false,
+        routeService: service,
+        floodReportService: FakeFloodReportService()
+          ..reports = [exampleFloodReport()],
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Map'));
+    await tester.pumpAndSettle();
+
+    final picker = find.byKey(const Key('map-route-chooser'));
+    expect(
+      tester.widget<PopupMenuButton<String>>(picker).initialValue,
+      first.id,
+    );
+    expect(find.text('NOT PASSABLE'), findsOneWidget);
+    await tester.tap(picker);
+    await tester.pumpAndSettle();
+    expect(find.byType(CheckedPopupMenuItem<String>), findsNWidgets(2));
+    expect(
+      tester.getRect(find.byType(CheckedPopupMenuItem<String>).last).bottom,
+      lessThanOrEqualTo(
+        tester
+            .getRect(find.byKey(const Key('selected-route-warning-card')))
+            .top,
+      ),
+    );
+    await tester.tap(
+      find.widgetWithText(CheckedPopupMenuItem<String>, 'Work route'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<PopupMenuButton<String>>(picker).initialValue,
+      second.id,
+    );
+    expect(find.text('SAFE'), findsOneWidget);
+    expect(find.text('NOT PASSABLE'), findsNothing);
+    await tester.tap(picker);
+    await tester.pumpAndSettle();
+    expect(
+      tester.getRect(find.byType(CheckedPopupMenuItem<String>).last).bottom,
+      lessThanOrEqualTo(
+        tester
+            .getRect(find.byKey(const Key('selected-route-warning-card')))
+            .top,
+      ),
+    );
+    await tester.tapAt(const Offset(8, 300));
+    await tester.pumpAndSettle();
+    final line = tester.widget<PolylineLayer>(find.byType(PolylineLayer));
+    expect(line.polylines.single.points.first.latitude, second.startLatitude);
+    expect(line.polylines.single.points.first.longitude, second.startLongitude);
+    expect(
+      line.polylines.single.points.last.latitude,
+      second.destinationLatitude,
+    );
+    expect(
+      line.polylines.single.points.last.longitude,
+      second.destinationLongitude,
+    );
+    final camera = MapCamera.of(tester.element(find.byType(MarkerLayer)));
+    expect(
+      camera.visibleBounds.contains(line.polylines.single.points.first),
+      isTrue,
+    );
+    expect(
+      camera.visibleBounds.contains(line.polylines.single.points.last),
+      isTrue,
+    );
+
+    await tester.tap(find.byTooltip('Refresh flood reports'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<PopupMenuButton<String>>(picker).initialValue,
+      second.id,
+    );
+
+    await tester.tap(find.text('View'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CheckedPopupMenuItem<String>), findsNothing);
+    expect(
+      tester
+          .widget<RouteDetailsScreen>(find.byType(RouteDetailsScreen))
+          .route
+          .id,
+      second.id,
+    );
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<PopupMenuButton<String>>(picker).initialValue,
+      second.id,
+    );
+  });
+
+  testWidgets('deleting the selected Map route falls back to another route', (
+    tester,
+  ) async {
+    usePhoneSize(tester);
+    final first = exampleRoute();
+    final second = exampleRoute(id: 'route-2', name: 'Work route');
+    final service = FakeRouteService()..routes = [first, second];
+    await tester.pumpWidget(
+      _testApp(
+        isGuest: false,
+        routeService: service,
+        floodReportService: FakeFloodReportService(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Map'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('map-route-chooser')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.widgetWithText(CheckedPopupMenuItem<String>, 'Work route'),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('View'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Edit or delete route'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Delete route'));
+    await tester.tap(find.text('Delete route'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    expect(service.routes.map((route) => route.id), [first.id]);
+    expect(find.byType(RouteDetailsScreen), findsNothing);
+    expect(find.byKey(const Key('map-route-chooser')), findsNothing);
+    expect(find.text(first.name), findsOneWidget);
+    final line = tester.widget<PolylineLayer>(find.byType(PolylineLayer));
+    expect(line.polylines.single.points.first.latitude, first.startLatitude);
+    expect(line.polylines.single.points.first.longitude, first.startLongitude);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('editing Map route endpoints reframes the map', (tester) async {
+    usePhoneSize(tester);
+    final service = FakeRouteService()..routes = [exampleRoute()];
+    await tester.pumpWidget(
+      _testApp(
+        isGuest: false,
+        routeService: service,
+        floodReportService: FakeFloodReportService(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Map'));
+    await tester.pumpAndSettle();
+    final originalMapKey = tester
+        .widget<FlutterMap>(find.byType(FlutterMap))
+        .key;
+    final originalDestination = service.routes.single.destinationLatitude;
+
+    await tester.tap(find.text('View'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Edit or delete route'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.widgetWithText(TextFormField, 'Destination'),
+    );
+    await tester.tap(find.widgetWithText(TextFormField, 'Destination'));
+    final editorMap = find.byKey(const Key('add-route-map'));
+    await tester.ensureVisible(editorMap);
+    await tester.tapAt(tester.getCenter(editorMap) + const Offset(50, 30));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.ensureVisible(find.text('Save changes'));
+    await tester.tap(find.text('Save changes'));
+    await tester.pumpAndSettle();
+
+    expect(service.updateCalls, 1);
+    expect(find.byType(RouteDetailsScreen), findsNothing);
+    expect(find.byType(FlutterMap), findsOneWidget);
+    final updatedRoute = service.routes.single;
+    expect(updatedRoute.destinationLatitude, isNot(originalDestination));
+    expect(
+      tester.widget<FlutterMap>(find.byType(FlutterMap)).key,
+      isNot(originalMapKey),
+    );
+    final line = tester.widget<PolylineLayer>(find.byType(PolylineLayer));
+    expect(
+      line.polylines.single.points.last.latitude,
+      updatedRoute.destinationLatitude,
+    );
+    final camera = MapCamera.of(tester.element(find.byType(MarkerLayer)));
+    expect(
+      camera.visibleBounds.contains(line.polylines.single.points.last),
+      isTrue,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final width in [320.0, 390.0, 1280.0]) {
+    testWidgets('bottom route chooser fits at width $width', (tester) async {
+      tester.view.physicalSize = Size(width, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final service = FakeRouteService()
+        ..routes = [
+          exampleRoute(),
+          exampleRoute(id: 'route-2', name: 'Work route'),
+        ];
+      await tester.pumpWidget(
+        _testApp(
+          isGuest: false,
+          routeService: service,
+          floodReportService: FakeFloodReportService(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Map'));
+      await tester.pumpAndSettle();
+
+      final picker = find.byKey(const Key('map-route-chooser'));
+      final card = find.byKey(const Key('selected-route-warning-card'));
+      expect(picker, findsOneWidget);
+      expect(
+        tester.getRect(picker).left,
+        greaterThanOrEqualTo(tester.getRect(card).left),
+      );
+      expect(
+        tester.getRect(picker).right,
+        lessThanOrEqualTo(tester.getRect(card).right),
+      );
+      await tester.tap(picker);
+      await tester.pumpAndSettle();
+      expect(find.byType(CheckedPopupMenuItem<String>), findsNWidgets(2));
+      expect(
+        tester.getRect(find.byType(CheckedPopupMenuItem<String>).last).bottom,
+        lessThanOrEqualTo(tester.getRect(card).top),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('bottom route chooser scrolls through all saved routes', (
+    tester,
+  ) async {
+    usePhoneSize(tester);
+    final routes = [
+      for (var index = 1; index <= 8; index++)
+        exampleRoute(id: 'route-$index', name: 'Route $index'),
+    ];
+    final service = FakeRouteService()..routes = routes;
+    await tester.pumpWidget(
+      _testApp(
+        isGuest: false,
+        routeService: service,
+        floodReportService: FakeFloodReportService(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Map'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('map-route-chooser')));
+    await tester.pumpAndSettle();
+    expect(find.byType(CheckedPopupMenuItem<String>), findsNWidgets(8));
+    final card = find.byKey(const Key('selected-route-warning-card'));
+    expect(
+      tester.getRect(find.byType(CheckedPopupMenuItem<String>).first).top,
+      lessThan(tester.getRect(card).top),
+    );
+    final last = find.widgetWithText(CheckedPopupMenuItem<String>, 'Route 8');
+    await tester.ensureVisible(last);
+    await tester.pumpAndSettle();
+    await tester.tap(last);
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<PopupMenuButton<String>>(
+            find.byKey(const Key('map-route-chooser')),
+          )
+          .initialValue,
+      routes.last.id,
+    );
+    expect(find.text('Route 8'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('guest demo List and Map do not open private Details', (
