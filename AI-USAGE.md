@@ -967,6 +967,26 @@ After these fixes, all 24 Home tests and all 87 tests in the full Flutter suite 
 
 At my request, Codex wrote this AI-usage entry. This phase should be credited as my application animation with Codex guidance, review, and direct assistance on tests and one comment. No commit hash or push is claimed yet for this phase.
 
+## Home Map saved-route selection and bottom-card chooser
+
+**Date:** September 29, 2026
+
+**Tool:** Codex
+
+**Status:** Implementation committed by me as `be8e24f`. A push and live backend verification have not been confirmed.
+
+### My contribution and decision
+
+I noticed that Map view chose a saved route without giving me a choice of which one to display. I raised that usability problem, worked on the initial route-selection behavior myself, and sought Codex assistance to finish and test it. After seeing the first version in the running app, I found that its selector covered useful map space. I provided a screenshot and specified the revised interaction: tap the existing bottom route card to show the saved-route list above it, while keeping the separate View action for route details. The problem identification, design decision, visual review, and acceptance of the revised behavior were mine.
+
+### How Codex helped
+
+The route-selection work was AI-assisted. In this latest revision, I explicitly asked Codex to edit the code. Codex removed the selector from the top of the map, made the route summary in the bottom card open a scrollable list of saved routes, and kept View as a separate action. Selecting a route updates the displayed line, status, and map framing. Codex updated the Home widget tests, adjusted the popup placement after a test exposed a 16-pixel overlap with the card, and added a test for a longer scrollable route list. These latest source and test edits were made by Codex at my direction; I do not claim that I personally typed those edits.
+
+### Validation and authorship
+
+Codex formatted the changed Dart files, ran `flutter analyze` with no issues, and ran the full Flutter suite with all 94 tests passing. `git diff --check` found no whitespace errors; Git printed only LF-to-CRLF conversion warnings. I reviewed the visual result and said it matched the interaction I wanted. This is my feature direction and design feedback with direct Codex implementation assistance, not an independently student-written code claim. At my request, Codex also wrote this AI-usage entry. I committed the implementation and tests as `be8e24f` (`feat: choose saved routes from Home map card`). This documentation update remains uncommitted; a push and live backend verification are not claimed.
+
 ## Final integration and deployment
 
 **Status:** Pending.
