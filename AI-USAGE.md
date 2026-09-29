@@ -941,6 +941,32 @@ I ran `flutter test test/home_screen_test.dart`; all 23 Home tests passed. Codex
 
 Codex supplied guidance and read-only review. I authored the Home code change and performed commit [4a72876 — polish: animate home view selector background](https://github.com/Allen021006/bahantabay/commit/4a72876) myself. At my request, Codex wrote this documentation entry after the commit. No push or live deployment verification is claimed here.
 
+## Phase 13D-3 — Home List/Map view transition
+
+**Date:** September 29, 2026
+
+**Tool:** Codex
+
+**Status:** Student-authored application animation reviewed; Codex-assisted test and comment fixes validated. Commit pending at the time of this entry.
+
+### What I asked AI to help with
+
+I wanted a more noticeable, purposeful animation than the earlier icon and selector-band changes. Codex recommended a transition for the whole Home List/Map content area and explained AnimatedSwitcher, distinct child keys, a short directional shift with a fade, reduced-motion handling, and the need to keep outgoing content from receiving interaction or accessibility focus. I wrote the initial application implementation myself and sent my code to Codex for review.
+
+### What I wrote
+
+In `lib/features/home/presentation/screens/home_screen.dart`, I added a 300-millisecond AnimatedSwitcher around the List/Map content, with separate keys for the two views. I wrote the fade and 20-pixel horizontal shift, the reduced-motion duration, and a layout builder that keeps the incoming view above the outgoing view while excluding outgoing content from taps, semantics, and focus. The view selector, route and report data, map behavior, and navigation logic retain their existing roles. This application animation is my implementation, written with AI guidance and review.
+
+### What Codex changed at my request
+
+The initial implementation compiled, but five existing Home tests failed because AnimatedSwitcher temporarily retained the outgoing view. The tests' unscoped finders saw content from both views during the transition. After I explicitly asked Codex to fix this, it updated the affected assertions in `test/home_screen_test.dart` to wait for the transition to settle where the test expected the outgoing view to be gone. It also added a focused rapid List → Map → List regression test that checks the selected state and verifies the outgoing view ignores pointer input. Codex corrected one source comment about map state: the outgoing map is retained during the transition, then disposed after the switch. Codex formatted both edited files. These test changes and the comment correction are Codex-authored; Codex did not write the application animation.
+
+### Validation and authorship
+
+After these fixes, all 24 Home tests and all 87 tests in the full Flutter suite passed. `flutter analyze` reported no issues, and `git diff --check` reported no whitespace errors. A nonfatal missed-tap warning in the pre-existing Guest Map “View” test still appeared; it did not fail the suite. I accepted the result. Specific manual viewport and reduced-motion checks have not been recorded here.
+
+At my request, Codex wrote this AI-usage entry. This phase should be credited as my application animation with Codex guidance, review, and direct assistance on tests and one comment. No commit hash or push is claimed yet for this phase.
+
 ## Final integration and deployment
 
 **Status:** Pending.

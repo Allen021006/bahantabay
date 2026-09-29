@@ -51,6 +51,10 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _mapCenter = LatLng(15.1454, 120.5922);
   static const _routeStart = LatLng(15.1458, 120.5887);
   static const _routeDestination = LatLng(15.1450, 120.5957);
+  static const _viewTransitionDuration = Duration(milliseconds: 300);
+  static const _viewShiftDistance = 20.0;
+  static const _listViewKey = ValueKey<String>('home-list-view');
+  static const _mapViewKey = ValueKey<String>('home-map-view');
   HomeView _selectedView = HomeView.list;
   List<SavedRoute> _routes = [];
   bool _loadingRoutes = false;
@@ -346,9 +350,18 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           _buildViewSelector(),
           Expanded(
-            child: _selectedView == HomeView.list
-                ? _buildListView()
-                : _buildMapView(),
+            child: AnimatedSwitcher(
+              duration: MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : _viewTransitionDuration,
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              transitionBuilder: _buildViewTransition,
+              layoutBuilder: _layoutViewTransition,
+              child: _selectedView == HomeView.list
+                  ? KeyedSubtree(key: _listViewKey, child: _buildListView())
+                  : KeyedSubtree(key: _mapViewKey, child: _buildMapView()),
+            ),
           ),
         ],
       ),
@@ -357,6 +370,56 @@ class _HomeScreenState extends State<HomeScreen> {
         icon: const Icon(Icons.add),
         label: const Text('Report Flood'),
       ),
+    );
+  }
+
+  /// Fades the view and shifts it a short distance into place. Map enters from
+  /// the trailing side and List from the leading side; the outgoing view runs
+  /// the same path in reverse, so the two views move as one continuous motion.
+  Widget _buildViewTransition(Widget child, Animation<double> animation) {
+    final direction = child.key == _mapViewKey ? 1.0 : -1.0;
+    return FadeTransition(
+      opacity: animation,
+      child: AnimatedBuilder(
+        animation: animation,
+        child: child,
+        builder: (context, child) => Transform.translate(
+          offset: Offset(
+            direction * _viewShiftDistance * (1 - animation.value),
+            0,
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  /// Stacks the incoming view over any outgoing ones. Outgoing views are made
+  /// non-interactive and hidden from accessibility and focus so they can never
+  /// intercept taps or be announced while they fade away. Every child gets a
+  /// wrapper keyed like its transition child, preserving that child while it
+  /// moves from current to outgoing. A completed switch still disposes it.
+  Widget _layoutViewTransition(
+    Widget? currentChild,
+    List<Widget> previousChildren,
+  ) {
+    Widget guard(Widget child, {required bool active}) {
+      return IgnorePointer(
+        key: child.key,
+        ignoring: !active,
+        child: ExcludeSemantics(
+          excluding: !active,
+          child: ExcludeFocus(excluding: !active, child: child),
+        ),
+      );
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        for (final child in previousChildren) guard(child, active: false),
+        if (currentChild != null) guard(currentChild, active: true),
+      ],
     );
   }
 

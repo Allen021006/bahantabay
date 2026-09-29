@@ -178,7 +178,7 @@ void main() {
     expect(tester.widget<RouteCard>(find.byType(RouteCard)).status, isNull);
     expect(find.text('SAFE'), findsNothing);
     await tester.tap(find.text('Map'));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('Status not assessed'), findsOneWidget);
     await tester.tap(find.text('View'));
     await tester.pump();
@@ -415,6 +415,15 @@ void main() {
 
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.byType(FlutterMap), findsOneWidget);
+    expect(
+      tester
+          .widget<SegmentedButton<HomeView>>(
+            find.byType(SegmentedButton<HomeView>),
+          )
+          .selected,
+      {HomeView.map},
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Saved routes'), findsNothing);
     final selector = tester.widget<SegmentedButton<HomeView>>(
       find.byType(SegmentedButton<HomeView>),
@@ -430,10 +439,49 @@ void main() {
     );
 
     await tester.tap(find.text('List'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Saved routes'), findsOneWidget);
     expect(find.byType(FlutterMap), findsNothing);
+  });
+
+  testWidgets('rapid view switches keep only the selected view interactive', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_testApp(isGuest: true));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Map'));
+    await tester.pump();
+
+    final selector = find.byType(SegmentedButton<HomeView>);
+    expect(tester.widget<SegmentedButton<HomeView>>(selector).selected, {
+      HomeView.map,
+    });
+    expect(find.byType(FlutterMap), findsOneWidget);
+    expect(find.text('Saved routes'), findsOneWidget);
+    expect(
+      tester
+          .widgetList<IgnorePointer>(
+            find.ancestor(
+              of: find.text('Saved routes'),
+              matching: find.byType(IgnorePointer),
+            ),
+          )
+          .any((widget) => widget.ignoring),
+      isTrue,
+    );
+
+    await tester.tap(find.text('List'));
+    await tester.pump();
+
+    expect(tester.widget<SegmentedButton<HomeView>>(selector).selected, {
+      HomeView.list,
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('Saved routes'), findsOneWidget);
+    expect(find.byType(FlutterMap), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('Home Map renders route, flood markers, and warning card', (
@@ -446,7 +494,7 @@ void main() {
 
     await tester.pumpWidget(_testApp(isGuest: true));
     await tester.tap(find.text('Map'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.byType(FlutterMap), findsOneWidget);
     expect(find.byKey(const Key('route-start-marker')), findsOneWidget);
@@ -554,7 +602,7 @@ void main() {
       expect(find.text('NOT PASSABLE'), findsOneWidget);
       expect(find.text('SAFE'), findsNothing);
       await tester.tap(find.text('Map'));
-      await tester.pump();
+      await tester.pumpAndSettle();
       final line = tester
           .widget<PolylineLayer>(find.byType(PolylineLayer))
           .polylines
@@ -645,7 +693,7 @@ void main() {
       expect(find.text('user-a'), findsNothing);
       expect(find.text('NOT PASSABLE'), findsOneWidget);
       await tester.tap(find.text('Map'));
-      await tester.pump();
+      await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey('flood-marker-new-report')),
         findsOneWidget,
