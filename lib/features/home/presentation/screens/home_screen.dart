@@ -387,7 +387,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildViewSelector() {
-    return ColoredBox(
+    return AnimatedContainer(
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 200),
       color: _selectedView == HomeView.map
           ? AppColors.floodBlue
           : AppColors.scaffoldBackground,
