@@ -889,7 +889,7 @@ My contribution was identifying the issues, requesting the changes, and acceptin
 
 **Tool:** Codex
 
-**Status:** Implementation reviewed and four focused Sign In tests passing. Manual interaction and viewport checks have not yet been confirmed. No commit or push was performed by Codex for this task.
+**Status:** Implementation reviewed, four focused Sign In tests passing, and committed by me as `cc38bb8`. Manual interaction and viewport checks have not yet been confirmed. No commit or push was performed by Codex for this task.
 
 ### What I asked AI to help with
 
@@ -917,7 +917,29 @@ Before the new tests were added, I reported successful Dart formatting, flutter 
 
 Manual checks for rapid toggling, keyboard activation, and layout stability at 360 × 800 in both authentication modes remain unconfirmed. I also asked why the change was not visually obvious; Codex clarified that it only adds a brief icon crossfade, not new password behavior or a page redesign. This was a small learning exercise, not completion of the wider Phase 13D polish work.
 
-At my request, Codex wrote this documentation entry. No commit reference is recorded yet. This entry distinguishes my AI-guided implementation and tests from Codex's direct test-timing edits and documentation assistance.
+At my request, Codex wrote this documentation entry. The work was committed as [cc38bb8 — fix: update sign in password visibility behavior](https://github.com/Allen021006/bahantabay/commit/cc38bb8). This entry distinguishes my AI-guided implementation and tests from Codex's direct test-timing edits and documentation assistance.
+
+## Phase 13D-2 — Home view-selector background animation
+
+**Date:** September 29, 2026
+
+**Tool:** Codex
+
+**Status:** Implemented and committed by me as `4a72876`. Focused automated checks passed; manual viewport and reduced-motion checks have not been reported.
+
+### What I asked AI to help with
+
+After the password icon exercise, I asked Codex for the next small Phase 13D task. Codex reviewed Home's List/Map selector and its tests, then proposed animating the selector band's existing background color when the view changes. It explained the use of Flutter's AnimatedContainer and the reduced-motion preference, and gave me the location and validation steps. It did not write the Home application change or new tests.
+
+### What I wrote
+
+I changed `_buildViewSelector()` in `lib/features/home/presentation/screens/home_screen.dart` from a ColoredBox to an AnimatedContainer. It uses the existing Mist Grey and Flood Blue colors, transitions over 200 milliseconds, and uses Duration.zero when MediaQuery.disableAnimationsOf(context) is true. The List/Map selection callback, content, and layout remain in place. No new package or animation controller was added.
+
+### Review, validation, and authorship
+
+I ran `flutter test test/home_screen_test.dart`; all 23 Home tests passed. Codex reviewed the diff, confirmed that Dart formatting required no changes, ran `flutter analyze` with no issues, and checked that `git diff --check` reported no whitespace errors. The test log also contained a nonfatal missed-tap warning in an existing Guest Map “View” interaction; the test still passed, and that warning was not resolved as part of this animation exercise. The existing tests verify Home behavior but do not specifically measure the color transition.
+
+Codex supplied guidance and read-only review. I authored the Home code change and performed commit [4a72876 — polish: animate home view selector background](https://github.com/Allen021006/bahantabay/commit/4a72876) myself. At my request, Codex wrote this documentation entry after the commit. No push or live deployment verification is claimed here.
 
 ## Final integration and deployment
 
