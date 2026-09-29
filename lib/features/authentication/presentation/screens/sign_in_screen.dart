@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/layout/content_inset.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/primary_button.dart';
@@ -25,6 +26,7 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
+  static const _maxFormWidth = 440.0;
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -113,8 +115,11 @@ class _SignInScreenState extends State<SignInScreen> {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 return SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: centeredContentInset(
+                      constraints.maxWidth,
+                      maxContentWidth: _maxFormWidth,
+                    ),
                     vertical: AppSpacing.lg,
                   ),
                   child: ConstrainedBox(
@@ -262,8 +267,8 @@ class _SignInScreenState extends State<SignInScreen> {
     return TextButton(
       onPressed: _switchMode,
       style: TextButton.styleFrom(foregroundColor: AppColors.surface),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Wrap(
+        alignment: WrapAlignment.center,
         children: [
           Text(
             _isSignUp ? 'Already have an account? ' : 'Don’t have an account? ',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../../core/layout/content_inset.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -22,6 +23,7 @@ class ReportFloodScreen extends StatefulWidget {
 }
 
 class _ReportFloodScreenState extends State<ReportFloodScreen> {
+  static const _maxContentWidth = 640.0;
   final _formKey = GlobalKey<FormState>();
   final _notesController = TextEditingController();
   LatLng? _location;
@@ -91,69 +93,77 @@ class _ReportFloodScreenState extends State<ReportFloodScreen> {
                 autovalidateMode: _showValidation
                     ? AutovalidateMode.onUserInteraction
                     : AutovalidateMode.disabled,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _heading('Report location'),
-                      const SizedBox(height: AppSpacing.sm),
-                      _buildLocation(),
-                      const SizedBox(height: AppSpacing.lg),
-                      DropdownButtonFormField<FloodDepth>(
-                        key: const Key('flood-depth'),
-                        isExpanded: true,
-                        decoration: _decoration('Flood depth'),
-                        hint: const Text('Select flood depth'),
-                        items: [
-                          for (final depth in FloodDepth.values)
-                            DropdownMenuItem(
-                              value: depth,
-                              child: Text(depth.label),
-                            ),
-                        ],
-                        onChanged: _submitting
-                            ? null
-                            : (value) => setState(() => _depth = value),
-                        validator: (value) =>
-                            value == null ? 'Select a flood depth.' : null,
+                child: LayoutBuilder(
+                  builder: (_, constraints) => SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: centeredContentInset(
+                        constraints.maxWidth,
+                        maxContentWidth: _maxContentWidth,
                       ),
-                      const SizedBox(height: AppSpacing.lg),
-                      _heading('Road status'),
-                      const SizedBox(height: AppSpacing.sm),
-                      _buildRoadStatus(),
-                      const SizedBox(height: AppSpacing.lg),
-                      TextFormField(
-                        key: const Key('flood-notes'),
-                        controller: _notesController,
-                        enabled: !_submitting,
-                        minLines: 3,
-                        maxLines: 5,
-                        maxLength: FloodReportDraft.maxNotesLength,
-                        decoration: _decoration('Notes (optional)').copyWith(
-                          hintText: 'Add details about the flood...',
-                          helperText:
-                              'Notes are public. Do not include names, phone numbers or other private details.',
-                          helperMaxLines: 3,
-                          alignLabelWithHint: true,
-                        ),
-                        validator: (value) =>
-                            (value?.length ?? 0) >
-                                FloodReportDraft.maxNotesLength
-                            ? 'Keep notes to 1,000 characters or fewer.'
-                            : null,
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      if (_submitError != null) ...[
-                        _errorText(_submitError!),
+                      vertical: AppSpacing.lg,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _heading('Report location'),
                         const SizedBox(height: AppSpacing.sm),
+                        _buildLocation(),
+                        const SizedBox(height: AppSpacing.lg),
+                        DropdownButtonFormField<FloodDepth>(
+                          key: const Key('flood-depth'),
+                          isExpanded: true,
+                          decoration: _decoration('Flood depth'),
+                          hint: const Text('Select flood depth'),
+                          items: [
+                            for (final depth in FloodDepth.values)
+                              DropdownMenuItem(
+                                value: depth,
+                                child: Text(depth.label),
+                              ),
+                          ],
+                          onChanged: _submitting
+                              ? null
+                              : (value) => setState(() => _depth = value),
+                          validator: (value) =>
+                              value == null ? 'Select a flood depth.' : null,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        _heading('Road status'),
+                        const SizedBox(height: AppSpacing.sm),
+                        _buildRoadStatus(),
+                        const SizedBox(height: AppSpacing.lg),
+                        TextFormField(
+                          key: const Key('flood-notes'),
+                          controller: _notesController,
+                          enabled: !_submitting,
+                          minLines: 3,
+                          maxLines: 5,
+                          maxLength: FloodReportDraft.maxNotesLength,
+                          decoration: _decoration('Notes (optional)').copyWith(
+                            hintText: 'Add details about the flood...',
+                            helperText:
+                                'Notes are public. Do not include names, phone numbers or other private details.',
+                            helperMaxLines: 3,
+                            alignLabelWithHint: true,
+                          ),
+                          validator: (value) =>
+                              (value?.length ?? 0) >
+                                  FloodReportDraft.maxNotesLength
+                              ? 'Keep notes to 1,000 characters or fewer.'
+                              : null,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        if (_submitError != null) ...[
+                          _errorText(_submitError!),
+                          const SizedBox(height: AppSpacing.sm),
+                        ],
+                        PrimaryButton(
+                          label: 'Submit Report',
+                          onPressed: _submit,
+                          isLoading: _submitting,
+                        ),
                       ],
-                      PrimaryButton(
-                        label: 'Submit Report',
-                        onPressed: _submit,
-                        isLoading: _submitting,
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),

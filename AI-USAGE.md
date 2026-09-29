@@ -973,7 +973,7 @@ At my request, Codex wrote this AI-usage entry. This phase should be credited as
 
 **Tool:** Codex
 
-**Status:** Implementation committed by me as `be8e24f`. A push and live backend verification have not been confirmed.
+**Status:** Implementation committed by me as `be8e24f`; the documentation update was committed as `b1273b6`. Both commits have been pushed. Live backend verification has not been recorded.
 
 ### My contribution and decision
 
@@ -985,7 +985,27 @@ The route-selection work was AI-assisted. In this latest revision, I explicitly 
 
 ### Validation and authorship
 
-Codex formatted the changed Dart files, ran `flutter analyze` with no issues, and ran the full Flutter suite with all 94 tests passing. `git diff --check` found no whitespace errors; Git printed only LF-to-CRLF conversion warnings. I reviewed the visual result and said it matched the interaction I wanted. This is my feature direction and design feedback with direct Codex implementation assistance, not an independently student-written code claim. At my request, Codex also wrote this AI-usage entry. I committed the implementation and tests as `be8e24f` (`feat: choose saved routes from Home map card`). This documentation update remains uncommitted; a push and live backend verification are not claimed.
+Codex formatted the changed Dart files, ran `flutter analyze` with no issues, and ran the full Flutter suite with all 94 tests passing. `git diff --check` found no whitespace errors; Git printed only LF-to-CRLF conversion warnings. I reviewed the visual result and said it matched the interaction I wanted. This is my feature direction and design feedback with direct Codex implementation assistance, not an independently student-written code claim. At my request, Codex also wrote this AI-usage entry. I committed the implementation and tests as `be8e24f` (`feat: choose saved routes from Home map card`) and the documentation as `b1273b6` (`docs: record Home map route selection AI usage`), then pushed both. Live backend verification is not claimed.
+
+## Cross-screen responsiveness for the compact desktop preview
+
+**Date:** September 29, 2026
+
+**Tool:** Codex
+
+**Status:** Implemented and automatically validated locally. The current code and this entry are not yet committed or pushed. Manual review in the Mac/Windows DevicePreview model remains pending.
+
+### What I did
+
+I wanted the app to work across its screens at a Mac/Windows-style DevicePreview size of 1620 × 750 physical pixels at 2× scaling, or about 810 × 375 Flutter logical pixels. Codex explained the distinction between physical and logical pixels and gave me a file-by-file responsiveness exercise. I then wrote the initial changes myself: an 800-logical-pixel Home Map breakpoint, compact left-side map panels and route framing, a centered Home List, and width-limited scrollable content for Sign In, Add/Edit Route, Report Flood, and Route Details. I also adjusted route-map height for short viewports and wrote Home tests for the breakpoint and compact Map/List layouts. These initial application and Home-test changes were my work with AI guidance.
+
+### What Codex fixed at my request
+
+I asked Codex to repair my changes when analysis failed. Five screens imported `lib/core/layout/content_inset.dart`, but I had not added that shared helper file. Codex created it to calculate centered horizontal insets while retaining the existing phone edge spacing. After that, the full test suite exposed a seven-pixel overflow in the Sign In mode-switch row at narrower content widths. Codex changed that control from a Row to a centered Wrap so the text can move to another line when needed. The helper file and this Sign In control correction are Codex-authored; Codex did not replace my wider responsiveness implementation or Home tests.
+
+### Validation and authorship
+
+The first `flutter analyze` run reported ten issues caused by the missing helper. With Codex's corrections, analysis reported no issues, all 35 Home tests passed, and all 98 tests in the full Flutter suite passed. `git diff --check` found no whitespace errors, only LF-to-CRLF warnings. Automated layout checks include the 799/800 breakpoint and an 810 × 375 logical-pixel Home Map/List viewport. The other screens have not yet been manually inspected in the Mac/Windows preview, and no live backend verification is claimed. At my request, Codex wrote this AI-usage entry. This is my initial responsiveness implementation and test work with two specific Codex-authored fixes.
 
 ## Final integration and deployment
 

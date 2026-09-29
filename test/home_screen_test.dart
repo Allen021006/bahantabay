@@ -556,6 +556,22 @@ void main() {
         tester.getRect(picker).right,
         lessThanOrEqualTo(tester.getRect(card).right),
       );
+      if (width >= 800) {
+        // PC layout: both panels are 360 px wide and share the left inset.
+        final cardRect = tester.getRect(card);
+        expect(cardRect.width, closeTo(360, 0.01));
+        expect(cardRect.left, closeTo(24, 0.01));
+        expect(find.text('No flood reports yet.'), findsOneWidget);
+        final banner = find
+            .ancestor(
+              of: find.text('No flood reports yet.'),
+              matching: find.byType(Material),
+            )
+            .first;
+        final bannerRect = tester.getRect(banner);
+        expect(bannerRect.width, closeTo(360, 0.01));
+        expect(bannerRect.left, closeTo(cardRect.left, 0.01));
+      }
       await tester.tap(picker);
       await tester.pumpAndSettle();
       expect(find.byType(CheckedPopupMenuItem<String>), findsNWidgets(2));
@@ -566,6 +582,171 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  for (final entry in {799.0: false, 800.0: true}.entries) {
+    testWidgets('map uses the PC layout only from 800 px (${entry.key})', (
+      tester,
+    ) async {
+      tester.view.physicalSize = Size(entry.key, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final service = FakeRouteService()..routes = [exampleRoute()];
+      await tester.pumpWidget(
+        _testApp(
+          isGuest: false,
+          routeService: service,
+          floodReportService: FakeFloodReportService(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Map'));
+      await tester.pumpAndSettle();
+
+      final card = find.byKey(const Key('selected-route-warning-card'));
+      // Phone layout spans the width minus 24 px on each side.
+      expect(
+        tester.getRect(card).width,
+        closeTo(entry.value ? 360 : entry.key - 48, 0.01),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('map at 810 x 375 keeps panels, route and actions usable', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(810, 375);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final routes = [
+      for (var index = 1; index <= 8; index++)
+        exampleRoute(id: 'route-$index', name: 'Route $index'),
+    ];
+    await tester.pumpWidget(
+      _testApp(
+        isGuest: false,
+        routeService: FakeRouteService()..routes = routes,
+        floodReportService: FakeFloodReportService(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Map'));
+    await tester.pumpAndSettle();
+
+    final cardRect = tester.getRect(
+      find.byKey(const Key('selected-route-warning-card')),
+    );
+    final bannerRect = tester.getRect(
+      find
+          .ancestor(
+            of: find.text('No flood reports yet.'),
+            matching: find.byType(Material),
+          )
+          .first,
+    );
+    final fabRect = tester.getRect(find.byType(FloatingActionButton));
+    expect(cardRect.width, closeTo(360, 0.01));
+    expect(bannerRect.width, closeTo(360, 0.01));
+    expect(bannerRect.bottom, lessThan(cardRect.top));
+    expect(cardRect.bottom, lessThanOrEqualTo(375));
+    expect(fabRect.overlaps(cardRect), isFalse);
+    expect(fabRect.right, lessThanOrEqualTo(810));
+    expect(fabRect.bottom, lessThanOrEqualTo(375));
+
+    // The framed route stays in the open map area, clear of panels and FAB.
+    for (final key in const [
+      'route-start-marker',
+      'route-destination-marker',
+    ]) {
+      final marker = find.byKey(Key(key));
+      expect(marker, findsOneWidget);
+      final rect = tester.getRect(marker);
+      expect(rect.left, greaterThanOrEqualTo(cardRect.right));
+      expect(rect.overlaps(fabRect), isFalse);
+    }
+
+    // The chooser opens above the card, stays on-screen and scrolls.
+    await tester.tap(find.byKey(const Key('map-route-chooser')));
+    await tester.pumpAndSettle();
+    expect(find.byType(CheckedPopupMenuItem<String>), findsNWidgets(8));
+    final menuRect = tester.getRect(
+      find
+          .ancestor(
+            of: find.byType(CheckedPopupMenuItem<String>).first,
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(menuRect.top, greaterThanOrEqualTo(0));
+    expect(menuRect.bottom, lessThanOrEqualTo(cardRect.top));
+    expect(menuRect.height, lessThan(8 * 48.0));
+    final last = find.widgetWithText(CheckedPopupMenuItem<String>, 'Route 8');
+    await tester.ensureVisible(last);
+    await tester.pumpAndSettle();
+    await tester.tap(last);
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<PopupMenuButton<String>>(
+            find.byKey(const Key('map-route-chooser')),
+          )
+          .initialValue,
+      'route-8',
+    );
+
+    // "View" stays reachable and opens the selected route.
+    await tester.tap(find.text('View'));
+    await tester.pumpAndSettle();
+    final details = tester.widget<RouteDetailsScreen>(
+      find.byType(RouteDetailsScreen),
+    );
+    expect(details.route.id, 'route-8');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('list at 810 x 375 keeps cards readable and actions reachable', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(810, 375);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final service = FakeRouteService()
+      ..routes = [
+        exampleRoute(),
+        exampleRoute(id: 'route-2', name: 'Work route'),
+      ];
+    await tester.pumpWidget(
+      _testApp(
+        isGuest: false,
+        routeService: service,
+        floodReportService: FakeFloodReportService(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(RouteCard), findsNWidgets(2));
+    for (final element in find.byType(RouteCard).evaluate()) {
+      final rect = tester.getRect(find.byElementPredicate((e) => e == element));
+      expect(rect.width, lessThanOrEqualTo(720.01));
+      expect(rect.left, greaterThanOrEqualTo(45 - 0.01));
+    }
+    final addRoute = tester.getRect(find.text('Add route'));
+    expect(addRoute.top, greaterThanOrEqualTo(0));
+    expect(addRoute.bottom, lessThanOrEqualTo(375));
+
+    // The end of the list scrolls clear of the Report Flood button.
+    await tester.drag(find.byType(ListView), const Offset(0, -2000));
+    await tester.pumpAndSettle();
+    final fabRect = tester.getRect(find.byType(FloatingActionButton));
+    expect(
+      tester.getRect(find.text('No flood reports yet.')).bottom,
+      lessThanOrEqualTo(fabRect.top),
+    );
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('bottom route chooser scrolls through all saved routes', (
     tester,

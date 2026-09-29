@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../../core/layout/content_inset.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -53,6 +54,17 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _routeDestination = LatLng(15.1450, 120.5957);
   static const _viewTransitionDuration = Duration(milliseconds: 300);
   static const _viewShiftDistance = 20.0;
+  // Map view widths at or above this use the PC layout.
+  static const _desktopMapMinWidth = 800.0;
+  static const _desktopPanelWidth = 360.0;
+  static const _desktopPanelInset = AppSpacing.lg;
+  // Keeps the framed route clear of the Report Flood button (56 + 16 margin)
+  // plus half a route marker.
+  static const _desktopFabClearance = 104.0;
+  // Bottom inset + route card + gap; the chooser may use the rest of the map.
+  static const _desktopChooserReservedHeight = 120.0;
+  static const _phoneChooserMaxHeight = 280.0;
+  static const _listMaxContentWidth = 720.0;
   static const _listViewKey = ValueKey<String>('home-list-view');
   static const _mapViewKey = ValueKey<String>('home-map-view');
   HomeView _selectedView = HomeView.list;
@@ -366,7 +378,17 @@ class _HomeScreenState extends State<HomeScreen> {
               transitionBuilder: _buildViewTransition,
               layoutBuilder: _layoutViewTransition,
               child: _selectedView == HomeView.list
-                  ? KeyedSubtree(key: _listViewKey, child: _buildListView())
+                  ? KeyedSubtree(
+                      key: _listViewKey,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) => _buildListView(
+                          centeredContentInset(
+                            constraints.maxWidth,
+                            maxContentWidth: _listMaxContentWidth,
+                          ),
+                        ),
+                      ),
+                    )
                   : KeyedSubtree(key: _mapViewKey, child: _buildMapView()),
             ),
           ),
@@ -498,12 +520,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildListView() {
+  Widget _buildListView(double horizontalInset) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
+      padding: EdgeInsets.fromLTRB(
+        horizontalInset,
         0,
-        AppSpacing.lg,
+        horizontalInset,
         AppSpacing.lg * 4,
       ),
       children: [
@@ -603,7 +625,21 @@ class _HomeScreenState extends State<HomeScreen> {
     return _routes.first;
   }
 
+  /// Chooses the phone or PC layout from the width the Map view is actually
+  /// given, not from the screen size.
   Widget _buildMapView() {
+    return LayoutBuilder(
+      builder: (context, constraints) => _buildMapContent(
+        isDesktop: constraints.maxWidth >= _desktopMapMinWidth,
+        availableHeight: constraints.maxHeight,
+      ),
+    );
+  }
+
+  Widget _buildMapContent({
+    required bool isDesktop,
+    required double availableHeight,
+  }) {
     final selected = _resolveSelectedRoute();
     final showDemoRoute = widget.isGuest && widget.showDemoData;
     final start = showDemoRoute
@@ -620,6 +656,7 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         FlutterMap(
           key: ValueKey((
+            isDesktop,
             selected?.id ??
                 (showDemoRoute ? 'demo' : _reports.firstOrNull?.id ?? 'empty'),
             start?.latitude,
@@ -636,7 +673,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? null
                 : CameraFit.bounds(
                     bounds: LatLngBounds(start, destination),
-                    padding: const EdgeInsets.fromLTRB(48, 48, 48, 200),
+                    // PC: reserve the left column used by the panels so the
+                    // route is framed in the open map area beside them.
+                    padding: isDesktop
+                        ? const EdgeInsets.fromLTRB(
+                            _desktopPanelInset + _desktopPanelWidth + 48,
+                            48,
+                            48,
+                            _desktopFabClearance,
+                          )
+                        : const EdgeInsets.fromLTRB(48, 48, 48, 200),
                     maxZoom: 16,
                   ),
           ),
@@ -709,8 +755,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         Positioned(
           top: AppSpacing.sm,
-          left: AppSpacing.sm,
-          right: AppSpacing.sm,
+          left: isDesktop ? _desktopPanelInset : AppSpacing.sm,
+          right: isDesktop ? null : AppSpacing.sm,
+          width: isDesktop ? _desktopPanelWidth : null,
           child: Material(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(4),
@@ -741,10 +788,20 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         Positioned(
           left: AppSpacing.lg,
-          right: AppSpacing.lg,
-          bottom: 88,
+          right: isDesktop ? null : AppSpacing.lg,
+          width: isDesktop ? _desktopPanelWidth : null,
+          bottom: isDesktop ? AppSpacing.lg : 88,
           child: showDemoRoute || selected != null
-              ? _buildSelectedRouteCard(selected)
+              ? _buildSelectedRouteCard(
+                  selected,
+                  // Keep the saved-route list inside the map area above the
+                  // card; it scrolls when it is taller than this.
+                  chooserMaxHeight: isDesktop
+                      ? (availableHeight - _desktopChooserReservedHeight)
+                            .clamp(96.0, _phoneChooserMaxHeight)
+                            .toDouble()
+                      : _phoneChooserMaxHeight,
+                )
               : Material(
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(16),
@@ -758,7 +815,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSelectedRouteCard(SavedRoute? selected) {
+  Widget _buildSelectedRouteCard(
+    SavedRoute? selected, {
+    double chooserMaxHeight = _phoneChooserMaxHeight,
+  }) {
     final canChooseRoute =
         selected != null && !widget.isGuest && _routes.length > 1;
     final routeSummary = Column(
@@ -800,17 +860,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       tooltip: 'Choose saved route',
                       initialValue: selected.id,
                       borderRadius: BorderRadius.circular(8),
-                      constraints: const BoxConstraints(
+                      constraints: BoxConstraints(
                         minWidth: 220,
                         maxWidth: 360,
-                        maxHeight: 280,
+                        maxHeight: chooserMaxHeight,
                       ),
                       // Place the route list above the bottom card in the
                       // available map space, with a scrollable height cap.
                       offset: Offset(
                         0,
                         -(_routes.length * 48.0 + 16.0)
-                                .clamp(0.0, 280.0)
+                                .clamp(0.0, chooserMaxHeight)
                                 .toDouble() -
                             AppSpacing.sm -
                             AppSpacing.lg,

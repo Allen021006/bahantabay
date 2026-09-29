@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../../core/layout/content_inset.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../data/route_service.dart';
@@ -24,6 +25,8 @@ class RouteDetailsScreen extends StatelessWidget {
   final RouteService? routeService;
   final String? userId;
 
+  static const _maxContentWidth = 640.0;
+
   @override
   Widget build(BuildContext context) {
     final startPoint = LatLng(route.startLatitude, route.startLongitude);
@@ -31,6 +34,10 @@ class RouteDetailsScreen extends StatelessWidget {
       route.destinationLatitude,
       route.destinationLongitude,
     );
+    // Shrink on short viewports so there is room around the map to scroll.
+    final mapHeight = (MediaQuery.sizeOf(context).height * 0.6)
+        .clamp(200.0, 280.0)
+        .toDouble();
 
     return Scaffold(
       appBar: AppBar(
@@ -59,46 +66,54 @@ class RouteDetailsScreen extends StatelessWidget {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  route.name,
-                  style: Theme.of(context).textTheme.headlineSmall,
+        child: LayoutBuilder(
+          builder: (_, constraints) => SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: centeredContentInset(
+                  constraints.maxWidth,
+                  maxContentWidth: _maxContentWidth,
                 ),
-                const SizedBox(height: AppSpacing.lg),
-                Text('Status', style: Theme.of(context).textTheme.labelSmall),
-                const SizedBox(height: AppSpacing.xs),
-                if (status != null)
-                  StatusBadge(status: status!)
-                else
+                vertical: AppSpacing.lg,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    'Status not assessed',
+                    route.name,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text('Status', style: Theme.of(context).textTheme.labelSmall),
+                  const SizedBox(height: AppSpacing.xs),
+                  if (status != null)
+                    StatusBadge(status: status!)
+                  else
+                    Text(
+                      'Status not assessed',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text('START', style: Theme.of(context).textTheme.labelSmall),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    '${startPoint.latitude}, ${startPoint.longitude}',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                const SizedBox(height: AppSpacing.lg),
-                Text('START', style: Theme.of(context).textTheme.labelSmall),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  '${startPoint.latitude}, ${startPoint.longitude}',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  'DESTINATION',
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  '${destinationPoint.latitude}, ${destinationPoint.longitude}',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                _buildMap(startPoint, destinationPoint),
-              ],
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    'DESTINATION',
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    '${destinationPoint.latitude}, ${destinationPoint.longitude}',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  _buildMap(mapHeight, startPoint, destinationPoint),
+                ],
+              ),
             ),
           ),
         ),
@@ -106,11 +121,11 @@ class RouteDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMap(LatLng startPoint, LatLng destinationPoint) {
+  Widget _buildMap(double height, LatLng startPoint, LatLng destinationPoint) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: SizedBox(
-        height: 280,
+        height: height,
         child: FlutterMap(
           options: MapOptions(
             initialCameraFit: CameraFit.bounds(

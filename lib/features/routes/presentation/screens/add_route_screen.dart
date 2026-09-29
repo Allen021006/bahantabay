@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../../core/layout/content_inset.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/primary_button.dart';
@@ -19,6 +20,7 @@ class AddRouteScreen extends StatefulWidget {
 }
 
 class _AddRouteScreenState extends State<AddRouteScreen> {
+  static const _maxContentWidth = 640.0;
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _startController = TextEditingController();
@@ -182,58 +184,69 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             autovalidateMode: _showValidation
                 ? AutovalidateMode.onUserInteraction
                 : AutovalidateMode.disabled,
-            child: ListView(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              children: [
-                TextFormField(
-                  enabled: !_isSaving,
-                  controller: _nameController,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: _decoration('Route name', 'e.g. Home to School'),
-                  validator: (value) => value == null || value.trim().isEmpty
-                      ? 'Enter a route name.'
-                      : null,
+            child: LayoutBuilder(
+              builder: (_, constraints) => ListView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: centeredContentInset(
+                    constraints.maxWidth,
+                    maxContentWidth: _maxContentWidth,
+                  ),
+                  vertical: AppSpacing.lg,
                 ),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  'Select route points',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _buildMap(),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  _selectingStart
-                      ? 'Tap the map to select your starting point.'
-                      : 'Tap the map to select your destination.',
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _buildPointField(isStart: true),
-                const SizedBox(height: AppSpacing.md),
-                _buildPointField(isStart: false),
-                const SizedBox(height: AppSpacing.lg),
-                if (_saveError != null) ...[
+                children: [
+                  TextFormField(
+                    enabled: !_isSaving,
+                    controller: _nameController,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: _decoration(
+                      'Route name',
+                      'e.g. Home to School',
+                    ),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Enter a route name.'
+                        : null,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
                   Text(
-                    _saveError!,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: AppColors.errorText),
+                    'Select route points',
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                ],
-                PrimaryButton(
-                  label: widget.route == null ? 'Save route' : 'Save changes',
-                  onPressed: _saveRoute,
-                  isLoading: _isSaving,
-                ),
-                if (widget.route != null)
-                  TextButton.icon(
-                    onPressed: _isSaving ? null : _deleteRoute,
-                    icon: const Icon(Icons.delete_outline),
-                    label: const Text('Delete route'),
+                  _buildMap(),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    _selectingStart
+                        ? 'Tap the map to select your starting point.'
+                        : 'Tap the map to select your destination.',
+                    style: Theme.of(context).textTheme.labelSmall,
                   ),
-              ],
+                  const SizedBox(height: AppSpacing.md),
+                  _buildPointField(isStart: true),
+                  const SizedBox(height: AppSpacing.md),
+                  _buildPointField(isStart: false),
+                  const SizedBox(height: AppSpacing.lg),
+                  if (_saveError != null) ...[
+                    Text(
+                      _saveError!,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.errorText,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
+                  PrimaryButton(
+                    label: widget.route == null ? 'Save route' : 'Save changes',
+                    onPressed: _saveRoute,
+                    isLoading: _isSaving,
+                  ),
+                  if (widget.route != null)
+                    TextButton.icon(
+                      onPressed: _isSaving ? null : _deleteRoute,
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('Delete route'),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -279,10 +292,14 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
   }
 
   Widget _buildMap() {
+    // Shrink on short viewports so there is room around the map to scroll.
+    final mapHeight = (MediaQuery.sizeOf(context).height * 0.6)
+        .clamp(200.0, 280.0)
+        .toDouble();
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: SizedBox(
-        height: 280,
+        height: mapHeight,
         child: FlutterMap(
           key: const Key('add-route-map'),
           options: MapOptions(
