@@ -170,12 +170,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('B private route'), findsNothing);
       expect(find.byType(FloodReportEntry), findsOneWidget);
-      expect(
-        tester
-            .widget<FloatingActionButton>(find.byType(FloatingActionButton))
-            .onPressed,
-        isNull,
-      );
+      expect(find.byType(FloatingActionButton), findsNothing);
+      expect(find.text('Report Flood'), findsNothing);
       expect(reports.submitCalls, 0);
     },
   );
