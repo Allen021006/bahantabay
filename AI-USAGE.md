@@ -1020,3 +1020,33 @@ I explicitly asked to retain the preview frame and start with iPhone 13 Pro Max.
 At my request, Codex replaced starter web metadata with the Bahantabay name, description and Flood Blue color, removed the requested portrait-only orientation, and removed the page's browser-zoom restriction. It updated the README, this AI-usage record, the security checklist and the demo-video status. These configuration and documentation edits are Codex-authored at my direction. The demo video remains pending, and the new presentation settings have not yet been deployed or manually verified on the live site.
 
 Codex validated these local edits with clean Flutter analysis, all 98 tests passing, valid manifest JSON and a successful release web build using the `/bahantabay/` base path. The build used no live Supabase configuration and was a compilation check, not a backend test or deployment. It emitted a nonfatal missing Cupertino icon-font warning for follow-up in the whole-app audit. The diff check found no whitespace errors, only line-ending conversion warnings.
+
+## Final audit remediation and security verification
+
+**Date:** September 30, 2026
+
+**Tool:** Codex
+
+**Status:** Local fixes and automated checks complete; live SQL/API security checks completed by me. Commit, deployment and post-deployment verification remain pending.
+
+### What I asked AI to do
+
+After reviewing the final audit, I asked Codex to fix the pending flood-submission Back behavior, resolve the missing Cupertino icon-font warning, align the declared SDK and deployment version with the tested setup, and help complete the outstanding database security evidence.
+
+### What Codex changed
+
+Codex added pending-operation navigation protection to Report Flood so Back cannot close the form while its submission request is unresolved. It added a Home integration regression test that starts a delayed submission, attempts Back, confirms the form remains open, completes the request, and verifies that Home refreshes once and shows the new report.
+
+Codex added `cupertino_icons` as a direct dependency, changed the Dart constraint to `^3.12.0`, and pinned the Pages workflow to Flutter 3.44.2. It updated the lockfile and the relevant public documentation. These application, test, dependency, workflow and documentation changes are Codex-authored at my request.
+
+### What I verified myself
+
+Codex gave me instructions for the existing rollback-only SQL test and direct REST checks. I ran the complete `supabase/tests/phase_8_rls.sql` file in the intended Supabase project and received its final PASS result. I did not rerun either migration.
+
+I then used the deployed app's signed-in browser session and the client-safe publishable key to test the REST API. For both Guest and authenticated roles, the seven approved public report columns were allowed while `reporter_id` and wildcard selection were denied. I used no secret or `service_role` key and did not share keys, tokens, UUIDs, account details or report contents with Codex. These live actions and observations were performed by me; Codex did not access or operate my Supabase dashboard.
+
+### Validation
+
+Codex ran Flutter analysis with no issues, the full suite with all 99 tests passing, and a release web build using the `/bahantabay/` base path. The build succeeded and included both Material and Cupertino icon fonts without the previous missing-font warning. A final history scan found expected generic security terms in code and documentation, zero high-confidence privileged-key/private-key pattern matches, and no `.env` commits.
+
+These checks establish the local build and the security evidence described above. The changed application and deployment configuration still need to be committed, pushed, deployed and checked on the live site before final submission.

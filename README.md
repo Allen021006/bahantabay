@@ -19,7 +19,7 @@ Bahantabay is a community-based flood monitoring and route warning application f
 
 Use **Flutter 3.44.2 stable**, including **Dart 3.12.2**, plus Git and a modern browser. These are the previously recorded development SDK versions. Add Flutter's `bin` directory to PATH; check the installation with `flutter --version` and `flutter doctor`.
 
-`pubspec.yaml` declares Dart `^3.8.0`, but the current lockfile requires **Dart >=3.12.0 <4.0.0 and Flutter >=3.44.0**. The broader manifest constraint is not the tested development environment; use the versions above to reproduce it.
+`pubspec.yaml` and the lockfile require **Dart >=3.12.0 <4.0.0 and Flutter >=3.44.0**. The deployment workflow pins the tested Flutter 3.44.2 release.
 
 ### 2. Clone and install dependencies
 
@@ -179,7 +179,7 @@ Additional mockups: [Add Route](docs/assets/Add%20Route.png), [Route Details](do
 - If connectivity drops during submission, check Home before retrying to avoid a duplicate.
 - The project owner confirmed deployment and live application/authentication checks for `f02925f` on September 30, 2026. Updated runtime screenshots and the demo video remain pending.
 
-**Next steps:** complete the whole-app code and documentation review, refresh runtime screenshots, record the demo video, and finish the remaining security/privacy checklist. Recheck the live site after subsequent release changes.
+**Next steps:** refresh the runtime screenshots, finalize the presentation, record the demo video, prepare the square project image, and recheck the live site after the final release changes.
 
 **Possible post-MVP improvements:** road-following geometry, advanced map/location controls, and optional report photos with a separate storage/privacy review. No road-routing API was added to the MVP.
 

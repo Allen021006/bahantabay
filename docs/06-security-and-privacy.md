@@ -42,7 +42,7 @@ Supabase Row Level Security is defined in the Phase 8 migration for saved routes
 
 **Historical snapshot (2026-09-17):** The project owner has manually verified Phase 9 against real Supabase: route creation, immediate Home refresh, persistence across browser refresh, map coordinates, session restoration, account switching, owner isolation between two accounts, and guest restrictions all passed. Phase 10 adds authenticated flood-report inserts and public reads through the same client. Its automated tests use injected fakes and a loopback HTTP backend; live Phase 10 submission is not yet manually verified. No schema changes were needed. Route Details and route-status calculation remain unfinished.
 
-**Current status (owner confirmation, 2026-09-30):** The project owner confirmed the deployment and live application checks on GitHub Pages for `f02925f`, including authentication, Guest access, saved-route selection, editing/deletion and flood reporting. Earlier checks also covered persistence and owner isolation. This confirmation closes the pending live application checks; it does not claim a new SQL verification run, explicit denied-column API test, repository-history scan, or verification of later uncommitted changes.
+**Current status (owner confirmation, 2026-09-30):** The project owner confirmed the deployment and live application checks on GitHub Pages for `f02925f`, including authentication, Guest access, saved-route selection, editing/deletion and flood reporting. The owner then ran the complete updated rollback-only SQL verification and received its final PASS result. Direct REST checks confirmed that Guest and authenticated clients can request the seven public report columns but cannot request `reporter_id` or `*`. No migration was rerun and no secret/service-role key was used. Later local application and build changes still require deployment verification.
 
 The applied migrations define the following access model:
 
@@ -81,16 +81,16 @@ See [database setup and verification](../supabase/README.md) for the Phase 8 set
 
 - [x] Public flood-report projection/model and column-privacy migration prepared.
 - [x] Privacy migration manually applied and effective privileges checked by the project owner.
-- [ ] Record a full run of the updated rollback-only SQL verification after both migrations; the earlier Phase 8 result does not establish this.
+- [x] Full updated rollback-only SQL verification passed after both migrations (owner confirmation, 2026-09-30); fixtures rolled back.
 - [x] Guest/authenticated public reads and authenticated submit/refresh verified by the project owner after the privacy correction.
-- [ ] Record explicit denied `reporter_id`/wildcard API requests for both client roles; privilege inspection is recorded, but these API checks are not separately recorded. Old cached wildcard clients require refresh.
+- [x] Direct REST checks allowed the seven-field public projection and denied `reporter_id` and wildcard requests for both Guest and authenticated roles (owner confirmation, 2026-09-30).
 
 - [x] `.env` is in `.gitignore`.
 - [x] `.env.example` exists for documenting the required environment-variable names without storing their real values.
 - [x] No `service_role` key is intentionally used by the Flutter client.
 - [x] Guest demo routes and automated report fixtures are fictional/sample data; Home flood data comes from Supabase.
 - [x] Recorded repository/history audit found no actual secrets; `.env` had no history. GitHub Secret Protection and Push Protection were confirmed by the project owner.
-- [ ] Run and record the final repository-history secret scan: `git log -p | grep -i "api_key\|secret\|password\|token"` and verify that it finds no real secret.
+- [x] Final reachable-history scan completed on 2026-09-30. Generic security terms produced expected documentation/code matches; high-confidence privileged-key/private-key patterns produced zero matches, and `.env` has no commits.
 - [x] Supabase table definitions and RLS policies written in the Phase 8 migration.
 - [x] Migration applied to the intended Supabase project (confirmed by project owner before Phase 9).
 - [x] Supabase RLS role tests run successfully against the database (confirmed by project owner before Phase 9).

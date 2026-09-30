@@ -148,3 +148,24 @@ expiry remain documented MVP limitations rather than newly discovered defects.
 Core MVP flows have automated and owner-reported live evidence. Final submission
 should remain open until these items are addressed or explicitly documented as
 accepted limitations.
+
+## Remediation update — September 30, 2026
+
+The first three completion items above have now been addressed in local changes
+and owner-confirmed live verification:
+
+- Report Flood now prevents Back navigation while submission is pending. A Home
+  integration regression test confirms the form stays open, successful completion
+  returns to Home, and reports refresh exactly once. The full suite now passes 99
+  tests and Flutter analysis reports no issues.
+- `cupertino_icons` is now a direct dependency. The release web build succeeds
+  without the missing Cupertino font warning. The manifest requires Dart 3.12,
+  and the Pages workflow pins the tested Flutter 3.44.2 release.
+- The project owner ran the complete rollback-only SQL script and received its
+  final PASS result. Direct Guest and authenticated REST checks allowed the seven
+  public report columns and denied `reporter_id` and wildcard selection. No
+  migration was rerun and no secret/service-role key was used.
+
+These local source/configuration changes still need to be committed, deployed,
+and checked on the live site. Final screenshots, presentation review, demo video,
+square project image, and final submission review remain open.

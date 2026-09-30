@@ -1203,4 +1203,41 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('Back waits for a pending report, then Home refreshes once', (
+    tester,
+  ) async {
+    usePhoneSize(tester);
+    final pending = Completer<void>();
+    final reports = FakeFloodReportService()..onSubmit = () => pending.future;
+    final routes = FakeRouteService()..routes = [exampleRoute()];
+    await tester.pumpWidget(
+      _testApp(
+        isGuest: false,
+        routeService: routes,
+        floodReportService: reports,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(reports.fetchCalls, 1);
+    await tester.tap(find.text('Report Flood'));
+    await tester.pumpAndSettle();
+    await fillFloodForm(tester, notes: 'Pending crossing report');
+    await submitFloodForm(tester);
+    expect(reports.submitCalls, 1);
+
+    await tester.pageBack();
+    await tester.pump();
+    expect(find.byType(ReportFloodScreen), findsOneWidget);
+    expect(reports.fetchCalls, 1);
+
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(find.byType(ReportFloodScreen), findsNothing);
+    expect(reports.submitCalls, 1);
+    expect(reports.fetchCalls, 2);
+    expect(find.text('Pending crossing report'), findsOneWidget);
+    expect(find.text('NOT PASSABLE'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

@@ -1,10 +1,10 @@
 # Database setup and verification
 
-Status reviewed September 27, 2026: The project owner confirms both the initial schema/RLS and `20260923000000_restrict_flood_report_public_columns.sql` were manually applied to the live project. Effective privileges and application behavior were checked after the privacy correction, including public reads and authenticated submission. This documentation update does not run migrations or claim a new live test. A full run of the updated rollback-only SQL script and explicit denied reporter/wildcard API requests are not recorded as completed here.
+Status reviewed September 30, 2026: The project owner confirms both migrations were already applied. On September 30, the owner ran the complete updated rollback-only verification script and received its final PASS result. The owner also tested the REST API with the publishable key as Guest and with a signed-in user JWT: the seven public report columns returned successfully, while `reporter_id` and wildcard requests were denied for both roles. No migration was rerun, no secret/service-role key was used, and the fixtures were rolled back.
 
 ## Saved-route editing and deletion
 
-The client now uses the existing owner-only route UPDATE and DELETE permissions (`9c837fd`). No migration or policy change was required. Updates send only the route name and four coordinate fields; both operations filter by route ID and owner ID, check the session, and require one returned route ID to confirm success. Live Supabase verification of this new client flow is pending; earlier route creation and RLS checks are not a substitute.
+The client now uses the existing owner-only route UPDATE and DELETE permissions (`9c837fd`). No migration or policy change was required. Updates send only the route name and four coordinate fields; both operations filter by route ID and owner ID, check the session, and require one returned route ID to confirm success. The project owner confirmed the live edit/delete flow on September 30, 2026.
 
 ## Privacy correction for the existing database
 
