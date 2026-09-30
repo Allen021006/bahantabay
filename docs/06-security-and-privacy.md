@@ -2,7 +2,7 @@
 
 This repository is public. This document records the current security and privacy practices used by Bahantabay and will be updated as the backend and deployment are completed.
 
-**Documentation reviewed:** 2026-09-28. Live verification below is based on the project owner's recorded checks, not a new backend audit performed during this documentation update.
+**Documentation reviewed:** 2026-09-30. Live verification below is based on the project owner's recorded checks, not a new backend audit performed during this documentation update.
 
 **Privacy correction applied and verified by the project owner:** The client selects only public report fields and does not store fetched reporter IDs. The owner manually applied `supabase/migrations/20260923000000_restrict_flood_report_public_columns.sql`, inspected effective privileges, and verified public reads and authenticated submission afterward. Both client roles are restricted from selecting reporter IDs. The earlier dated status below is retained as a historical snapshot.
 
@@ -42,7 +42,7 @@ Supabase Row Level Security is defined in the Phase 8 migration for saved routes
 
 **Historical snapshot (2026-09-17):** The project owner has manually verified Phase 9 against real Supabase: route creation, immediate Home refresh, persistence across browser refresh, map coordinates, session restoration, account switching, owner isolation between two accounts, and guest restrictions all passed. Phase 10 adds authenticated flood-report inserts and public reads through the same client. Its automated tests use injected fakes and a loopback HTTP backend; live Phase 10 submission is not yet manually verified. No schema changes were needed. Route Details and route-status calculation remain unfinished.
 
-**Current status:** Phase 10 live submission, Home/map display, refresh persistence, public reads across accounts and Guest restrictions were manually verified. Route Details and route-status assessment are now implemented. The owner also confirmed that the Actions build and Pages deployment for `1f3a49d` passed. Final production browser/authentication verification remains separate from deployment success.
+**Current status (owner confirmation, 2026-09-30):** The project owner confirmed the deployment and live application checks on GitHub Pages for `f02925f`, including authentication, Guest access, saved-route selection, editing/deletion and flood reporting. Earlier checks also covered persistence and owner isolation. This confirmation closes the pending live application checks; it does not claim a new SQL verification run, explicit denied-column API test, repository-history scan, or verification of later uncommitted changes.
 
 The applied migrations define the following access model:
 
@@ -100,10 +100,10 @@ See [database setup and verification](../supabase/README.md) for the Phase 8 set
 - [x] Live end-to-end Phase 10 submit/reload/public-read smoke test recorded (project owner confirmation).
 - [x] External GitHub Actions pinned to verified full commit SHAs.
 - [x] Analyze/test failures block deployment; missing/empty Supabase build values stop the build. Informational analyzer diagnostics remain nonfatal.
-- [x] Actions build and Pages deployment for `1f3a49d` passed (project owner confirmation).
+- [x] Deployment for `f02925f` verified by the project owner on the GitHub Pages site (confirmed 2026-09-30).
 - [x] Saved-route edit/delete service and widget tests passed, including ownership filters, confirmation/cancellation, failure handling and account-switch editor disposal.
-- [ ] Manually verify saved-route editing, refreshed persistence, deletion and owner isolation against live Supabase for `9c837fd`.
-- [ ] Complete final live production browser/authentication and end-to-end flow checks.
+- [x] Saved-route editing/deletion verified on the deployed app by the owner (confirmed 2026-09-30); earlier persistence and owner-isolation checks are recorded above.
+- [x] Live production browser/authentication and end-to-end application flows verified by the owner for `f02925f` (confirmed 2026-09-30). Repeat after subsequent release changes.
 - [ ] Review all final screenshots for real personal data.
 - [ ] Review the final demo video for real personal data.
 - [ ] Verify that no course or university credentials appear anywhere in the public repository.

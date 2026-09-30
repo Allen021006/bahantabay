@@ -1,11 +1,11 @@
 {
   "name": "Bahantabay",
-  "short_name": "Final Project",
+  "short_name": "Bahantabay",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#FFFFFF",
-  "theme_color": "#6750A4",
-  "description": "My 6ADET final project.",
-  "orientation": "portrait-primary",
+  "background_color": "#1B4F72",
+  "theme_color": "#1B4F72",
+  "description": "Community flood reports and saved-route warnings for commuters in Angeles City and nearby areas.",
+  "orientation": "any",
   "prefer_related_applications": false
 }

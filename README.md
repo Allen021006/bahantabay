@@ -9,9 +9,9 @@ Bahantabay is a community-based flood monitoring and route warning application f
 
 **Public project repository:** https://github.com/Allen021006/bahantabay
 
-**Live site:** https://allen021006.github.io/bahantabay/ (final production/authentication verification pending)
+**Live site:** https://allen021006.github.io/bahantabay/ (deployment and live application flows verified by the project owner for `f02925f`, confirmed September 30, 2026)
 
-**Demo video:** Coming soon
+**Demo video:** Pending
 
 ## Setup and installation
 
@@ -77,7 +77,7 @@ flutter analyze
 flutter test
 ```
 
-The last recorded validation for saved-route editing and deletion (`9c837fd`) reported **84 passing tests**, no issues from `flutter analyze`, and a passing `git diff --check`. Automated tests use test doubles/local fixtures without live Supabase credentials and do not replace manual backend verification.
+Validation for the compact desktop responsiveness work (`f02925f`) reported **98 passing tests**, no issues from `flutter analyze`, and no whitespace errors from `git diff --check`. Automated tests use test doubles/local fixtures without live Supabase credentials. Separately, the project owner confirmed the deployment and live application flows on the GitHub Pages site on September 30, 2026.
 
 ## Features and usage
 
@@ -91,7 +91,9 @@ The locked MVP contains exactly five functional screens. Home List/Map are two s
 | **4. Route Details** | Open a real saved route from Home List or Home Map's View action. Inspect its name, start/destination coordinates, map and supplied status. Use the pencil icon to edit the route name/endpoints or delete the route with confirmation. Successful changes return to Home and reload routes for reassessment; leaving the editor with Back returns to Details without saving. Cancelling deletion keeps the editor open. Back preserves the expected Home state. Status is a nullable snapshot from Home, with no independent report fetch or recalculation. |
 | **5. Report Flood** | Signed-in users select a map location, Ankle/Knee/Waist/Chest depth, Passable/Not passable, and optional notes. Successful submission returns to Home and reloads reports. Live Supabase verification is complete. |
 
-Saved-route editing/deletion was added in [9c837fd](https://github.com/Allen021006/bahantabay/commit/9c837fd). It reuses the existing owner-only permissions, adds no functional screen, and does not affect public flood reports. Live Supabase edit/delete verification is still pending.
+Saved-route editing/deletion was added in [9c837fd](https://github.com/Allen021006/bahantabay/commit/9c837fd). It reuses the existing owner-only permissions, adds no functional screen, and does not affect public flood reports. The project owner confirmed live edit/delete verification on the deployed app on September 30, 2026.
+
+Home Map lets signed-in users choose a saved route from the bottom route card; the list opens above it and View opens the selected route's details. At widths of at least 800 logical pixels, the map uses compact left-side panels. The other screens keep content widths readable and allow scrolling on short viewports.
 
 Reporting validates required inputs, prevents duplicate presses while submitting, and preserves the draft on failure. Notes are public, have a 1,000-character client limit, and must not contain personal information. Home displays coordinates, depth, passability, notes and time without displaying reporter identities.
 
@@ -131,7 +133,7 @@ docs/assets/                  Design assets, mockups and current runtime capture
 
 ### Runtime screenshots
 
-These runtime captures cover the five functional screens, including both presentation states of Home. They are UI evidence, not proof of backend operations. The newly added edit/delete controls are not documented by these earlier captures; updated captures of those controls are still needed.
+These runtime captures cover the five functional screens, including both presentation states of Home. They are UI evidence, not proof of backend operations. Updated captures of the edit/delete controls, saved-route chooser, and responsive desktop layouts are still pending.
 
 #### Sign In / Guest Entry
 
@@ -175,9 +177,9 @@ Additional mockups: [Add Route](docs/assets/Add%20Route.png), [Route Details](do
 - Home reads only the latest 100 public reports globally, newest first, without geographic filtering of the fetch, pagination or automatic realtime updates. Route proximity is assessed locally within that collection.
 - Clients cannot edit/delete reports. Public notes must not contain personal information; internal reporter IDs are excluded from client SELECT access.
 - If connectivity drops during submission, check Home before retrying to avoid a duplicate.
-- The owner confirmed the Actions build and Pages deployment for `1f3a49d` passed. Final live application/authentication verification, updated runtime screenshots and presentation materials remain pending.
+- The project owner confirmed deployment and live application/authentication checks for `f02925f` on September 30, 2026. Updated runtime screenshots and the demo video remain pending.
 
-**Next steps:** verify the complete application on GitHub Pages and Supabase; finish UI/UX polish, updated screenshots, documentation, demo video and the final security/privacy review.
+**Next steps:** complete the whole-app code and documentation review, refresh runtime screenshots, record the demo video, and finish the remaining security/privacy checklist. Recheck the live site after subsequent release changes.
 
 **Possible post-MVP improvements:** road-following geometry, advanced map/location controls, and optional report photos with a separate storage/privacy review. No road-routing API was added to the MVP.
 
@@ -189,7 +191,9 @@ The privacy correction limits anon/authenticated report SELECT access to `id`, `
 
 The [Pages workflow](.github/workflows/deploy-web.yml) runs on pushes to `main` or manual dispatch. Its external actions are pinned to verified full commit SHAs rather than movable tags. Set Pages to **GitHub Actions** and add repository secrets `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`. The workflow supplies `--dart-define` values and the repository base path; it uploads `build/web`, not `.env`.
 
-Analysis failures and test failures now block deployment (`flutter analyze --no-fatal-infos` still allows informational diagnostics). The build also fails before compilation if either required Supabase value is empty, without printing the values. These checks do not validate whether nonempty credentials are correct. The owner confirmed the Actions build and Pages deployment for `1f3a49d` passed; final live application and production authentication checks remain separate. DevicePreview remains enabled in deployed builds.
+Analysis failures and test failures block deployment (`flutter analyze --no-fatal-infos` still allows informational diagnostics). The build also fails before compilation if either required Supabase value is empty, without printing the values. These checks do not validate whether nonempty credentials are correct. The project owner confirmed the deployment and live production flows for `f02925f` on September 30, 2026; this records the owner's checks, not a separate live test by Codex.
+
+DevicePreview intentionally remains enabled in deployed builds. Each fresh page load starts with the iPhone 13 Pro Max frame; visitors can choose other devices and orientations using the toolbar. Preview preferences reset on a fresh load, independently of the Supabase sign-in session. The surrounding web page uses Bahantabay branding and does not request an orientation lock or disable browser zoom. These presentation configuration changes require deployment before they appear on the live site.
 
 Do not commit `.env`, privileged keys, passwords, personal information or private user data. See [Security and privacy](docs/06-security-and-privacy.md) for access rules and outstanding checks.
 

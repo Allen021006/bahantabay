@@ -1,5 +1,7 @@
 # Demo video
 
+**Status (September 30, 2026):** Pending. The outline below is a recording plan; no completed demo video or final link has been provided.
+
 **File:** `demo.mp4` in this folder, or the hosted link (see below)
 **Length:** aim for 3 to 5 minutes
 **Recorded on:** the device you used

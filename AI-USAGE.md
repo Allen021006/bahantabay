@@ -819,7 +819,7 @@ The calculator and its 12 tests are Allen-authored; ChatGPT provided incremental
 
 **Tool:** Codex
 
-**Status:** Implemented, automatically tested, committed and pushed. Manual live Supabase verification of the new edit/delete flow is still pending.
+**Status:** Implemented, automatically tested, committed and pushed. I confirmed live edit/delete verification on September 30, 2026; see Final integration and deployment below.
 
 ### What I asked AI to help with
 
@@ -973,7 +973,7 @@ At my request, Codex wrote this AI-usage entry. This phase should be credited as
 
 **Tool:** Codex
 
-**Status:** Implementation committed by me as `be8e24f`; the documentation update was committed as `b1273b6`. Both commits have been pushed. Live backend verification has not been recorded.
+**Status:** Implementation committed by me as `be8e24f`; the documentation update was committed as `b1273b6`. Both commits have been pushed. Subsequent live verification is recorded under Final integration and deployment below.
 
 ### My contribution and decision
 
@@ -985,7 +985,7 @@ The route-selection work was AI-assisted. In this latest revision, I explicitly 
 
 ### Validation and authorship
 
-Codex formatted the changed Dart files, ran `flutter analyze` with no issues, and ran the full Flutter suite with all 94 tests passing. `git diff --check` found no whitespace errors; Git printed only LF-to-CRLF conversion warnings. I reviewed the visual result and said it matched the interaction I wanted. This is my feature direction and design feedback with direct Codex implementation assistance, not an independently student-written code claim. At my request, Codex also wrote this AI-usage entry. I committed the implementation and tests as `be8e24f` (`feat: choose saved routes from Home map card`) and the documentation as `b1273b6` (`docs: record Home map route selection AI usage`), then pushed both. Live backend verification is not claimed.
+Codex formatted the changed Dart files, ran `flutter analyze` with no issues, and ran the full Flutter suite with all 94 tests passing. `git diff --check` found no whitespace errors; Git printed only LF-to-CRLF conversion warnings. I reviewed the visual result and said it matched the interaction I wanted. This is my feature direction and design feedback with direct Codex implementation assistance, not an independently student-written code claim. At my request, Codex also wrote this AI-usage entry. I committed the implementation and tests as `be8e24f` (`feat: choose saved routes from Home map card`) and the documentation as `b1273b6` (`docs: record Home map route selection AI usage`), then pushed both. My subsequent live verification is recorded under Final integration and deployment below.
 
 ## Cross-screen responsiveness for the compact desktop preview
 
@@ -993,7 +993,7 @@ Codex formatted the changed Dart files, ran `flutter analyze` with no issues, an
 
 **Tool:** Codex
 
-**Status:** Implemented and automatically validated locally. The current code and this entry are not yet committed or pushed. Manual review in the Mac/Windows DevicePreview model remains pending.
+**Status:** Committed and pushed as `f02925f`. On September 30, 2026, I confirmed the deployed app and its live flows on GitHub Pages. A separate device-by-device manual test record has not been supplied.
 
 ### What I did
 
@@ -1005,10 +1005,18 @@ I asked Codex to repair my changes when analysis failed. Five screens imported `
 
 ### Validation and authorship
 
-The first `flutter analyze` run reported ten issues caused by the missing helper. With Codex's corrections, analysis reported no issues, all 35 Home tests passed, and all 98 tests in the full Flutter suite passed. `git diff --check` found no whitespace errors, only LF-to-CRLF warnings. Automated layout checks include the 799/800 breakpoint and an 810 × 375 logical-pixel Home Map/List viewport. The other screens have not yet been manually inspected in the Mac/Windows preview, and no live backend verification is claimed. At my request, Codex wrote this AI-usage entry. This is my initial responsiveness implementation and test work with two specific Codex-authored fixes.
+The first `flutter analyze` run reported ten issues caused by the missing helper. With Codex's corrections, analysis reported no issues, all 35 Home tests passed, and all 98 tests in the full Flutter suite passed. `git diff --check` found no whitespace errors, only LF-to-CRLF warnings. Automated layout checks include the 799/800 breakpoint and an 810 × 375 logical-pixel Home Map/List viewport. I subsequently committed and pushed this work as `f02925f` and confirmed live verification on September 30, 2026. A separate device-by-device manual test record is not claimed. At my request, Codex wrote this AI-usage entry. This is my initial responsiveness implementation and test work with two specific Codex-authored fixes.
 
 ## Final integration and deployment
 
-**Status:** Pending.
+**Status:** Deployment and live application flows through `f02925f` confirmed by me on September 30, 2026. Further release configuration changes are local until committed and deployed. The demo video, refreshed runtime screenshots, whole-app review and remaining security/privacy checks are pending.
 
-Any AI assistance involving production deployment, final testing, security review, or submission preparation will be recorded here as it occurs.
+I confirmed that I checked the deployed GitHub Pages app, including authentication, Guest access, saved-route selection, route editing/deletion and flood reporting. Codex updated the README and security checklist from my confirmation; it did not independently perform these live checks.
+
+### September 30, 2026 — Preview defaults and web presentation cleanup
+
+I explicitly asked to retain the preview frame and start with iPhone 13 Pro Max. Codex inspected the installed preview package and configured that device explicitly, with preview preferences reset on each fresh load so a previously selected device does not replace the default. Visitors can still switch devices in the toolbar; this setting does not reset the Supabase authentication session.
+
+At my request, Codex replaced starter web metadata with the Bahantabay name, description and Flood Blue color, removed the requested portrait-only orientation, and removed the page's browser-zoom restriction. It updated the README, this AI-usage record, the security checklist and the demo-video status. These configuration and documentation edits are Codex-authored at my direction. The demo video remains pending, and the new presentation settings have not yet been deployed or manually verified on the live site.
+
+Codex validated these local edits with clean Flutter analysis, all 98 tests passing, valid manifest JSON and a successful release web build using the `/bahantabay/` base path. The build used no live Supabase configuration and was a compilation check, not a backend test or deployment. It emitted a nonfatal missing Cupertino icon-font warning for follow-up in the whole-app audit. The diff check found no whitespace errors, only line-ending conversion warnings.
