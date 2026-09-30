@@ -394,11 +394,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: widget.isGuest ? null : _openReportFlood,
-        icon: const Icon(Icons.add),
-        label: const Text('Report Flood'),
-      ),
+      floatingActionButton: widget.isGuest
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: _openReportFlood,
+              icon: const Icon(Icons.add),
+              label: const Text('Report Flood'),
+            ),
     );
   }
 

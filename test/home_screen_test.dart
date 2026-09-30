@@ -869,19 +869,18 @@ void main() {
     expect(find.text('Report Flood'), findsOneWidget);
   });
 
-  testWidgets('guest Home disables write actions', (tester) async {
+  testWidgets('guest Home disables adding routes and hides flood reporting', (
+    tester,
+  ) async {
     final service = FakeRouteService();
     await tester.pumpWidget(_testApp(isGuest: true, routeService: service));
 
     final addRoute = tester.widget<TextButton>(
       find.widgetWithText(TextButton, 'Add route'),
     );
-    final reportFlood = tester.widget<FloatingActionButton>(
-      find.byType(FloatingActionButton),
-    );
-
     expect(addRoute.onPressed, isNull);
-    expect(reportFlood.onPressed, isNull);
+    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.text('Report Flood'), findsNothing);
     expect(find.byType(RouteCard), findsNWidgets(2));
     expect(service.fetchCalls, 0);
     expect(service.saveCalls, 0);
@@ -997,7 +996,7 @@ void main() {
     );
     expect(find.text('WARNING'), findsOneWidget);
     expect(find.text('View'), findsOneWidget);
-    expect(find.text('Report Flood'), findsOneWidget);
+    expect(find.text('Report Flood'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -1141,12 +1140,8 @@ void main() {
       await tester.pump();
       expect(find.byType(FloodReportEntry), findsOneWidget);
       expect(find.text('Water covers the crossing.'), findsOneWidget);
-      expect(
-        tester
-            .widget<FloatingActionButton>(find.byType(FloatingActionButton))
-            .onPressed,
-        isNull,
-      );
+      expect(find.byType(FloatingActionButton), findsNothing);
+      expect(find.text('Report Flood'), findsNothing);
       expect(reports.submitCalls, 0);
     },
   );
