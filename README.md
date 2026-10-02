@@ -10,6 +10,7 @@ Bahantabay is a community-based flood monitoring and route warning application f
 - **Live application:** [Open Bahantabay](https://allen021006.github.io/bahantabay/)
 - **Demonstration video:** Pending recording and publication
 - **Presentation slides:** In preparation
+- **Square image:** [Bahantabay Square Image](https://github.com/Allen021006/bahantabay/blob/310695fe9b7d3f1e4fd83a2d055cbb33af77ca5d/docs/assets/bahantabay-social-square.png)
 
 ## 2. Setup and installation
 
