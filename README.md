@@ -159,6 +159,9 @@ Report Flood is implemented and manually verified against live Supabase. This ca
 
 ![Route Details runtime screenshot](docs/assets/runtime-route-details.png)
 
+#### Guest View
+![Guest View runtime screenshot](docs/assets/runtime-guest-view.png)
+
 ### Approved design mockups — not runtime evidence
 
 | Sign In / Guest Entry | Home — List | Home — Map |
