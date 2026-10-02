@@ -1,119 +1,279 @@
 # Security and privacy
 
-This repository is public. This document records the current security and privacy practices used by Bahantabay and will be updated as the backend and deployment are completed.
+Bahantabay is a public repository containing a community flood monitoring and route warning application. This document explains its data handling, access controls, completed verification, and remaining security and privacy checks.
 
-**Documentation reviewed:** 2026-09-30. Live verification below is based on the project owner's recorded checks, not a new backend audit performed during this documentation update.
+**Documentation updated:** October 2, 2026.
 
-**Privacy correction applied and verified by the project owner:** The client selects only public report fields and does not store fetched reporter IDs. The owner manually applied `supabase/migrations/20260923000000_restrict_flood_report_public_columns.sql`, inspected effective privileges, and verified public reads and authenticated submission afterward. Both client roles are restricted from selecting reporter IDs. The earlier dated status below is retained as a historical snapshot.
+Live verification statements are based on the project owner’s recorded checks. This documentation update does not represent a new independent audit of the deployed application or database.
 
-## What this app stores
+## What the application stores
 
-| Data | Where it lives | Who can see it |
+| Data | Where it lives | Access |
 | --- | --- | --- |
-| User authentication account and session | Supabase Authentication | The authenticated user; authentication is managed by Supabase |
-| Saved routes | Supabase PostgreSQL; client fetch/insert/update/delete implemented | Authenticated owner, enforced by RLS |
-| Route start and destination coordinates | Supabase PostgreSQL | Same owner-only access as the saved route |
-| Community flood reports | Supabase PostgreSQL; Phase 10 client fetch/insert implemented | Public reads and authenticated owner inserts, enforced by RLS |
-| Flood location coordinates | Supabase PostgreSQL; shown in Home entries and map markers | Publicly readable with the associated report |
-| Flood depth, road status, optional notes, and report time | Supabase PostgreSQL; shown through FloodReportEntry | Publicly readable with the associated report |
-| Guest demo routes | Application source code, labelled as demo | Anyone viewing the repository or app; fictional/sample data |
+| Authentication accounts | Supabase Auth | Managed by Supabase Auth; accessible through authorized account operations and project administration, not the public report API |
+| Authentication session | Client-side session storage managed by Supabase Auth | Used by the signed-in browser; session tokens must not be shared or displayed |
+| Saved routes, names, and endpoint coordinates | Supabase PostgreSQL | Authenticated owner through the application, enforced by RLS |
+| Community flood-report location, depth, road status, notes, and creation time | Supabase PostgreSQL | Intentionally readable by Guest and authenticated clients |
+| Internal flood-report `reporter_id` | Supabase PostgreSQL | Used for ownership enforcement; excluded from Guest and authenticated SELECT access |
+| Guest demonstration routes | Application source code | Public, labelled demonstration data |
+| Route-status assessment | Calculated in the application | Derived from loaded reports; not stored as a separate database field |
 
-Flood-report photos are a stretch goal and are **not currently stored**. If implemented later, they will require a separate privacy and Supabase Storage access review before being enabled.
+Project administrators have privileged backend access. Owner-only and public-read descriptions above refer to ordinary application clients, not administrative access.
 
-Bahantabay does not require real names, student numbers, university credentials, private messages, or similar personal information as part of its normal flood-monitoring workflow.
+Flood-report photos are **not implemented or stored**. Adding them would require a separate storage, privacy, and moderation review.
 
-## Secrets
+The application uses email/password authentication but does not require real names, student numbers, university credentials, private messages, or phone numbers for its flood-monitoring features.
 
-- Values supplied at build time:
-  - `SUPABASE_URL`
-  - `SUPABASE_PUBLISHABLE_KEY`
-- Where they live locally: `.env`, which is git-ignored.
-- `.env.example` is committed with placeholder values only.
-- Where the deploy workflow gets them: repository secrets under **Settings > Secrets and variables > Actions**. The workflow passes compile-time `--dart-define` values into the Flutter web build and rejects either missing/empty value before compilation without printing it. Local runs use `--dart-define-from-file=.env`; Flutter does not load `.env` dynamically.
-- Anything my deployed web build carries that a visitor could read, and why that is acceptable: the Supabase URL and publishable client key are present in the deployed web application because a browser client needs them to communicate with Supabase. These values are client configuration rather than a `service_role` secret. Database access must therefore be protected by Supabase Row Level Security rather than by attempting to hide the client key.
+## Public and private information
 
-No Supabase `service_role` key, database password, service-account file, or other privileged backend credential should be stored in the Flutter application or committed to this repository.
+Saved routes are private because their names and endpoints may describe personal travel patterns.
 
-## What protects the data on the service side
+Community flood reports are intentionally public. Their coordinates, road conditions, notes, and timestamps may be read by anyone using the public API, including people who are not signed in.
 
-Bahantabay uses **Supabase Authentication** for user authentication.
+Public notes must not contain names, email addresses, phone numbers, home addresses, or other private information. The reporting form displays a reminder, but the application does not automatically detect or redact personal information.
 
-Supabase Row Level Security is defined in the Phase 8 migration for saved routes and community flood reports. The project owner confirms the migration was applied and RLS verification passed before Phase 9.
+The public flood-report API does not expose authentication email addresses or profile details. The signed-in account interface may display the current user’s email, so account menus and login screens need particular care during recording.
 
-**Historical snapshot (2026-09-17):** The project owner has manually verified Phase 9 against real Supabase: route creation, immediate Home refresh, persistence across browser refresh, map coordinates, session restoration, account switching, owner isolation between two accounts, and guest restrictions all passed. Phase 10 adds authenticated flood-report inserts and public reads through the same client. Its automated tests use injected fakes and a loopback HTTP backend; live Phase 10 submission is not yet manually verified. No schema changes were needed. Route Details and route-status calculation remain unfinished.
+Using an email address for a private test account does not itself publish that address in the repository. Test-account credentials and sessions must remain private, and personal emails should be excluded or redacted from submitted media.
 
-**Current status (owner confirmation, 2026-09-30):** The project owner confirmed the deployment and live application checks on GitHub Pages for `f02925f`, including authentication, Guest access, saved-route selection, editing/deletion and flood reporting. The owner then ran the complete updated rollback-only SQL verification and received its final PASS result. Direct REST checks confirmed that Guest and authenticated clients can request the seven public report columns but cannot request `reporter_id` or `*`. No migration was rerun and no secret/service-role key was used. Later local application and build changes still require deployment verification.
+## Client configuration and secrets
 
-The applied migrations define the following access model:
+The application requires:
+
+```text
+SUPABASE_URL
+SUPABASE_PUBLISHABLE_KEY
+```
+
+For local development:
+
+- `.env` contains the local values and is ignored by Git.
+- `.env.example` contains placeholders.
+- `--dart-define-from-file=.env` supplies compile-time definitions.
+- The application reads those definitions through `String.fromEnvironment`; it does not dynamically load `.env`.
+
+For deployment, the workflow reads the values from GitHub Actions repository secrets and passes them into the Flutter web build. It rejects missing or empty values before compilation without printing them.
+
+The Supabase URL and publishable key are client configuration and can be recovered from the deployed application. Their presence in a browser build is expected. Authorization depends on database policies and privileges, not on hiding these values.
+
+The Flutter application must never contain a Supabase secret/service-role key, database password, signing credential, private session token, or other privileged credential.
+
+## Backend access controls
+
+Bahantabay uses Supabase Auth and PostgreSQL Row Level Security.
+
+The initial schema and the later public-column privacy migration have been applied to the project database. Already-applied migrations must not be rerun.
 
 ### Saved routes
 
-- A signed-in user can create a route associated with their own authenticated user ID.
-- A user can read their own saved routes.
-- The edit/delete flow (`9c837fd`) reuses existing owner-only RLS and column grants. Updates change only the name and four endpoint coordinates. Both update/delete requests filter by route ID and owner ID, check the active session before and after the request, and require one returned ID to confirm success. Raw backend errors are not shown.
-- Deletion requires confirmation. Pending mutations disable submission actions; failures keep the editor open. Successful changes return to Home and reload routes for reassessment. Guests have no edit/delete flow.
-- A user cannot create a saved route on behalf of another user.
-- A user cannot modify or delete another user's saved routes.
-- Guest users cannot create or modify saved routes.
-- The route service checks the active session ID, filters reads by owner ID, and supplies that same ID on inserts for RLS validation. IDs and creation timestamps are left to database defaults.
-- Switching accounts/signing out discards the old Home state and open Add Route/Edit route draft. Old asynchronous results cannot populate a new account's route list.
-- Guest Home keeps read-only demo routes and does not fetch private routes. Real saved routes are assessed from successfully loaded reports within 200 meters of the bounded straight-line route: passable means WARNING, not passable means NOT PASSABLE (highest severity), and no relevant severity-raising report means SAFE. Loading/error remains “Status not assessed”. SAFE is not a guarantee of real-world safety. Route Details receives Home's assessment snapshot; no status is stored in the database.
+- Authenticated users can create routes associated with their own user ID.
+- Users can read, update, and delete only their own routes through the application API.
+- Guests cannot read private routes or create, edit, or delete saved routes.
+- Updates are limited to the route name and endpoint coordinates.
+- Client writes cannot transfer ownership or override database-generated IDs and creation timestamps.
+- The route service checks the active session and filters operations by owner ID.
+- Update and delete operations also filter by route ID and require one returned ID to confirm success.
+- RLS remains the authorization boundary even if client-side checks are bypassed.
+
+The edit/delete flow reuses the existing ownership policies and grants. It did not require a new migration.
+
+Deletion requires confirmation. Pending mutations disable submission actions, failures keep the editor open, and successful changes return to Home to reload routes.
+
+Account switching or logout discards the previous account’s Home state, private Details screen, and open route editor. Stale asynchronous results cannot populate a new account’s route list.
 
 ### Community flood reports
 
-- Flood reports are intended to be readable by signed-in users and guests so that community flood information remains useful without requiring an account.
-- Only authenticated users can create flood reports.
-- A submitted report must be associated with the authenticated user's ID rather than allowing the client to impersonate another user.
-- Flood reports are append-only for clients: neither `anon` nor `authenticated` has UPDATE or DELETE permissions, even for their own reports.
-- Public client reads select only `id`, `latitude`, `longitude`, `flood_depth`, `road_status`, `notes`, and `created_at`. The applied privacy migration restricts both anon and authenticated SELECT to these columns, with effective privileges checked by the project owner. Notes remain public and must not contain private/personal information. No Auth email or profile information is included.
-- The app's guest flow uses `anon`, not Supabase anonymous sign-in; guests cannot submit reports. Supabase anonymous sign-in is not used and should remain disabled.
-- Phase 10 Home fetches the latest 100 public reports, newest first, for both guests and authenticated users. It replaces demo flood entries/markers, provides refresh/retry actions, and does not geographically filter the fetch. Home then assesses straight-line proximity against this loaded collection for real saved routes; it is not a global road-safety assessment.
-- Report Flood requires a manually selected valid map coordinate, one of `ankle/knee/waist/chest`, and `passable/not_passable`. Notes are optional, with a 1,000-character client limit and a reminder that notes are public. The existing SQL text column has no added length constraint.
-- The submission service checks the active authenticated user and pins `reporter_id` to that user; RLS enforces ownership. IDs and timestamps remain database-generated. Pending submissions disable the form, failures preserve the draft, and successful submissions return to Home and reload reports.
-- Reporter UUIDs remain in the database and authenticated INSERT payload for ownership, but are removed from the public Flutter model and SELECT projection. The migration removes table-level and reporter-column SELECT grants without changing existing INSERT permissions or RLS policies, and checks effective privileges to detect inherited access. The UI does not display reporter UUIDs, emails, names, or Auth details. No client report UPDATE/DELETE methods, photo upload, or Supabase Storage were added.
-- Account changes discard any open Report Flood draft with the existing account-scoped navigation. Public reports can appear across accounts by design; private route isolation is unchanged.
+Guest and authenticated clients can select only:
 
-Both tables use required Auth ownership foreign keys with `ON DELETE CASCADE`: deleting an Auth account removes its routes and reports. Client writes cannot override database-generated IDs/timestamps or transfer route ownership. No optional `profiles` table is needed for current functionality.
+```text
+id
+latitude
+longitude
+flood_depth
+road_status
+notes
+created_at
+```
 
-See [database setup and verification](../supabase/README.md) for the Phase 8 setup instructions, grants, constraints, and rollback-only role tests in `supabase/tests/phase_8_rls.sql`. Do not rerun already-applied migrations on the deployed tables.
+The privacy migration restricts SELECT privileges to these columns. Removing `reporter_id` from the interface alone would not have been sufficient; database privileges also deny access to it.
 
-## Checklist
+Report creation:
 
-- [x] Public flood-report projection/model and column-privacy migration prepared.
-- [x] Privacy migration manually applied and effective privileges checked by the project owner.
-- [x] Full updated rollback-only SQL verification passed after both migrations (owner confirmation, 2026-09-30); fixtures rolled back.
-- [x] Guest/authenticated public reads and authenticated submit/refresh verified by the project owner after the privacy correction.
-- [x] Direct REST checks allowed the seven-field public projection and denied `reporter_id` and wildcard requests for both Guest and authenticated roles (owner confirmation, 2026-09-30).
+- Requires an authenticated, non-anonymous application session.
+- Associates the report with the current authenticated user.
+- Is checked by the submission service and enforced by the database INSERT policy.
+- Leaves the report ID and creation timestamp to database defaults.
 
-- [x] `.env` is in `.gitignore`.
-- [x] `.env.example` exists for documenting the required environment-variable names without storing their real values.
-- [x] No `service_role` key is intentionally used by the Flutter client.
-- [x] Guest demo routes and automated report fixtures are fictional/sample data; Home flood data comes from Supabase.
-- [x] Recorded repository/history audit found no actual secrets; `.env` had no history. GitHub Secret Protection and Push Protection were confirmed by the project owner.
-- [x] Final reachable-history scan completed on 2026-09-30. Generic security terms produced expected documentation/code matches; high-confidence privileged-key/private-key patterns produced zero matches, and `.env` has no commits.
-- [x] Supabase table definitions and RLS policies written in the Phase 8 migration.
-- [x] Migration applied to the intended Supabase project (confirmed by project owner before Phase 9).
-- [x] Supabase RLS role tests run successfully against the database (confirmed by project owner before Phase 9).
-- [x] Phase 9 route fetch/insert client integration and offline automated tests implemented.
-- [x] Live end-to-end Phase 9 save/reload and account-isolation smoke test recorded (project owner confirmation before Phase 10).
-- [x] Phase 10 authenticated report submission, public reads, and offline automated tests implemented.
-- [x] Live end-to-end Phase 10 submit/reload/public-read smoke test recorded (project owner confirmation).
-- [x] External GitHub Actions pinned to verified full commit SHAs.
-- [x] Analyze/test failures block deployment; missing/empty Supabase build values stop the build. Informational analyzer diagnostics remain nonfatal.
-- [x] Deployment for `f02925f` verified by the project owner on the GitHub Pages site (confirmed 2026-09-30).
-- [x] Saved-route edit/delete service and widget tests passed, including ownership filters, confirmation/cancellation, failure handling and account-switch editor disposal.
-- [x] Saved-route editing/deletion verified on the deployed app by the owner (confirmed 2026-09-30); earlier persistence and owner-isolation checks are recorded above.
-- [x] Live production browser/authentication and end-to-end application flows verified by the owner for `f02925f` (confirmed 2026-09-30). Repeat after subsequent release changes.
-- [ ] Review all final screenshots for real personal data.
-- [ ] Review the final demo video for real personal data.
-- [ ] Verify that no course or university credentials appear anywhere in the public repository.
-- [ ] Verify that no real person's data is used in final test/sample data without permission.
-- [ ] Complete a final security and privacy review immediately before submission.
+Neither `anon` nor `authenticated` has client UPDATE or DELETE permission for flood reports, including reports submitted by the same user.
 
-No key has been recorded here as revoked because no known exposed privileged key has been identified during the project review so far. If a credential is later found in repository history, it will be revoked immediately and this document will be updated to record what was corrected.
+The internal reporter UUID remains in the database and authenticated INSERT payload for ownership enforcement. It is excluded from the public Flutter report model and SELECT projection.
 
-## Final review
+Guest mode uses unauthenticated access rather than Supabase anonymous sign-in. Supabase anonymous sign-in is not used and should remain disabled.
 
-This document records completed checks and remaining verification, not a guarantee of exhaustive security. Git metadata is expected to be public; history was not rewritten. Avoid unnecessary personal information in public project content.
+### Account deletion and retention
 
-Review again after final production flow checks, screenshot capture and demo recording, and immediately before submission. Update the documentation review date and checklist only with checks actually completed. The successful deployment does not replace these final application and privacy checks.
+Both application tables reference Auth users through ownership foreign keys with `ON DELETE CASCADE`. Deleting an Auth account therefore removes its associated routes and reports.
+
+The application does not currently provide a self-service account-deletion screen. Administrative account deletion is separate from logging out.
+
+There is no automatic report expiry or resolution process. Limiting Home to the latest 100 reports does not delete older database records.
+
+## Input validation and submission behavior
+
+Report Flood requires:
+
+- A valid manually selected map coordinate.
+- A flood-depth value of `ankle`, `knee`, `waist`, or `chest`.
+- A road-status value of `passable` or `not_passable`.
+- Optional notes within the 1,000-character client limit.
+
+The form and service validate input before submission. Database constraints provide additional checks for required values and valid data.
+
+The notes column does not currently have a matching database length constraint. The client-side limit must therefore not be treated as a server-enforced restriction.
+
+While report submission is pending, the form disables repeated submission and blocks Back navigation. On success, it returns to Home and triggers a report reload. On failure, it preserves the draft and displays a safe error message.
+
+This prevents repeated taps during an active request but does not guarantee server-side deduplication. If the connection drops after the server accepts a report, the user should check Home before retrying.
+
+Account changes discard open report drafts through account-scoped navigation. Public reports may appear across accounts by design; private routes remain isolated.
+
+## Maps and route assessments
+
+The application requests map tiles from OpenStreetMap. These requests go to an external service and can reveal ordinary connection information and the map area being viewed.
+
+The application displays OpenStreetMap contributor attribution. It does not currently use device GPS, camera access, photo uploads, or Supabase Storage.
+
+Home loads the latest 100 public reports globally, newest first. It then evaluates their proximity to each saved route locally.
+
+A report affects a route when it is within 200 meters of the bounded straight-line segment:
+
+- A relevant passable report produces WARNING.
+- A relevant not-passable report produces NOT PASSABLE, which takes priority.
+- No relevant severity-raising report produces SAFE after a successful load.
+
+Loading and retrieval failures remain **Status not assessed**.
+
+**SAFE is not a guarantee of real-world road safety.** Assessments use limited community observations and approximate straight-line geometry. They do not account for all roads, all reports, report expiry, or independently verified conditions.
+
+## Deployment controls
+
+The GitHub Pages workflow:
+
+- Uses Flutter 3.44.2.
+- Pins external GitHub Actions to full commit SHAs.
+- Runs analysis and tests before building.
+- Blocks deployment when required checks fail.
+- Rejects missing or empty Supabase configuration.
+- Uploads `build/web`, not the local `.env` file.
+
+The configured analyzer permits informational diagnostics to remain nonfatal.
+
+Workflow source inspection and a successful deployment do not by themselves establish that every log or uploaded artifact is free of private information. Final log and artifact inspection are tracked separately below.
+
+## Completed verification
+
+### Database and API checks
+
+The project owner ran the complete updated rollback-only SQL verification and received its final PASS result. Test fixtures were rolled back, and no already-applied migration was rerun.
+
+The owner also performed direct REST checks:
+
+| Request | Guest client | Authenticated client |
+| --- | --- | --- |
+| Select the seven approved public report columns | Allowed | Allowed |
+| Select `reporter_id` | Denied | Denied |
+| Select wildcard `*` | Denied | Denied |
+
+These checks used client-safe configuration and an ordinary authenticated session. No secret or service-role key was used.
+
+### Application checks
+
+The owner manually verified:
+
+- Authentication and restored sessions.
+- Saved-route creation and persistence.
+- Account switching and owner isolation.
+- Guest restrictions.
+- Saved-route selection, editing, and deletion.
+- Public report reads and authenticated submission.
+- Report refresh and persistence.
+- Pending-submission Back protection after the audit fix.
+- Phone and compact desktop preview behavior.
+
+These manual checks are distinct from automated tests.
+
+### Automated checks and deployment history
+
+The audit-remediation work in `8920448` passed analysis, all 99 tests, and a release web build. The owner subsequently confirmed successful deployment and live application checks.
+
+The later Guest-interface change in `ece0817` removed the Report Flood button. Its initial CI run failed because an AuthGate test still expected the old disabled button.
+
+Commit `bc6b05f` corrected that assertion to expect the button’s absence. Successful deployment of this follow-up and the newest live Guest view still require a recorded confirmation.
+
+### Repository checks
+
+The recorded reachable-history scan found:
+
+- Expected generic security-related terms in source and documentation.
+- No high-confidence privileged-key or private-key pattern matches.
+- No committed `.env` file.
+
+GitHub Secret Protection and Push Protection were previously confirmed by the owner.
+
+These findings describe the scope and time of the recorded checks. They do not prove that all possible credential formats or future commits are safe.
+
+## Verification checklist
+
+### Completed
+
+- [x] RLS enabled for `routes` and `flood_reports`.
+- [x] Initial schema and public-column privacy migration applied.
+- [x] Effective public-column privileges inspected by the owner.
+- [x] Complete rollback-only SQL verification returned PASS.
+- [x] Direct REST checks allowed public fields and denied `reporter_id` and wildcard selection for both client roles.
+- [x] Live route ownership and account-isolation checks completed.
+- [x] Live public reads, authenticated submission, and persistence checked.
+- [x] Saved-route editing and deletion manually verified.
+- [x] Pending-submission Back protection implemented, regression-tested, and manually checked after deployment.
+- [x] Guest Report Flood action removed from the application.
+- [x] Home and AuthGate assertions updated for the absent Guest action.
+- [x] `.env` excluded from Git and `.env.example` uses placeholders.
+- [x] Flutter client configured to use a publishable key rather than a privileged key.
+- [x] Recorded history scan found no high-confidence privileged credentials or committed `.env`.
+- [x] GitHub Secret Protection and Push Protection previously confirmed.
+- [x] External Actions pinned to full commit SHAs.
+- [x] Analysis and tests required before deployment.
+
+### Remaining final checks
+- [ ] Review a complete recent workflow log for unintended credential or private-data output.
+- [ ] Inspect the final uploaded Pages artifact for key files, `.env`, privileged credentials, or unintended configuration.
+- [ ] Review final screenshots, slides, PDF, video, and promotional image for personal or private information.
+- [ ] Confirm that course credentials, university credentials, student numbers, and unnecessary personal contact information are absent from public files and commit messages.
+- [ ] Review final sample records and media for real people’s private information.
+- [ ] Verify ownership, licensing, and attribution for final presentation and promotional assets.
+- [ ] Recheck repository visibility and submission-link access after the final push.
+- [ ] Complete the final security and privacy review immediately before submission.
+
+Completing the presentation files does not automatically complete their privacy review. Mark these items only after the relevant check has actually been performed.
+
+## If a credential or private information is exposed
+
+No exposed privileged credential has been identified in the recorded checks, so no credential rotation is claimed here.
+
+If a privileged credential is discovered, revoke or rotate it promptly, remove it from current files, review its exposure and use, and document the correction. Removing a value from the latest file does not remove it from Git history.
+
+If public notes or media contain private information, remove or redact the affected material using authorized administrative access and review any copies already published.
+
+## Related documentation
+
+- [Database setup and verification](../supabase/README.md)
+- [Rollback-only SQL verification](../supabase/tests/phase_8_rls.sql)
+- [Public-column privacy migration](../supabase/migrations/20260923000000_restrict_flood_report_public_columns.sql)
+- [Final application audit](07-final-audit.md)
+- [AI usage and authorship](../AI-USAGE.md)
+
+## Review scope
+
+This document records implemented controls, reported verification, and outstanding checks. It is not a guarantee of exhaustive security.
+
+Git author metadata is public; repository history has not been rewritten. Review new code, documentation, and media before publishing, and update this checklist when verification is completed.
