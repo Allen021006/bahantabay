@@ -1,40 +1,45 @@
 # Demo video
 
-**Status (September 30, 2026):** Pending. The outline below is a recording plan; no completed demo video or final link has been provided.
+**Status:** Recording completed; hosted link provided below.
 
-**File:** `demo.mp4` in this folder, or the hosted link (see below)
-**Length:** aim for 3 to 5 minutes
-**Recorded on:** the device you used
+**Video:** [Watch the Bahantabay demonstration](https://drive.google.com/file/d/12VzaDGG6WseuExtIJyMyUxdHLjl1ZxWU/view?usp=sharing)
 
-## What it shows
+**Length:** [4 minutes 44 seconds]
 
-A short list, in order, so a viewer can skip to what they need:
+**Recorded on:** [PC, Windows 11, Zoom Recording]
 
-- 0:00 what the app is and who it is for
-- 0:20 ...
-- 1:10 ...
+## About the video
 
-Cover, in this order: the main user journey end to end, anything that only works
-on a real device (camera, GPS, sensors), and the thing you are proudest of.
+This presentation introduces Bahantabay, a community-based flood monitoring and route warning application for commuters in Angeles City and nearby areas.
 
-## Getting it into the repo
+It demonstrates the application, explains selected implementation choices, and discusses how AI contributed to development alongside my personally written code.
 
-GitHub **blocks any file over 100 MB** and warns over 50 MB, so compress before
-you commit:
+## What it covers
 
-```bash
-ffmpeg -i raw.mp4 -vcodec libx264 -crf 28 -preset slow \
-       -vf scale=-2:720 -acodec aac -b:a 96k demo.mp4
-```
+- The commuter problem and the purpose of Bahantabay.
+- Guest access to public flood reports and labelled demonstration routes.
+- Authenticated access to private saved routes.
+- Home List and Map views, saved-route selection, and Route Details.
+- Route creation, editing, deletion, and flood reporting.
+- The route-status calculator and its 200-meter proximity rule.
+- AI assistance, my own implementation contributions, and development challenges.
+- Current limitations and possible future improvements.
 
-Raise `-crf` (28 to 32) or drop to `-2:480` if it is still too large. If it still
-does not fit, attach it to a **GitHub Release** or upload it unlisted and link it
-here. Never commit the raw capture: git keeps it forever even after you delete
-it.
+The application currently uses manual map selection. Camera access, device GPS, and sensor features are not implemented.
 
-## Before you record
+## Code and authorship discussion
 
-- Real data off the screen: no classmates' names, numbers, faces or messages.
-- Notifications off.
-- Sensible sample data, not "asdf".
-- One unbroken take per feature. Say what you are doing while you do it.
+The code explanation focuses on:
+
+- `lib/features/routes/domain/route_status_calculator.dart`
+- `test/route_status_calculator_test.dart`
+
+I personally wrote the calculator and its 12 focused tests with ChatGPT teaching and guidance. Codex reviewed those files without modifying them and later authored the surrounding integration and widget tests.
+
+The required AI-use segment distinguishes my personally written work, AI-guided learning, and changes implemented directly by Codex. The detailed development record is available in [AI-USAGE.md](../AI-USAGE.md).
+
+## Assessment limitations
+
+Bahantabay assesses currently loaded community reports near a bounded straight-line route. It does not provide road-following navigation.
+
+SAFE means that no relevant severity-raising report was found in the loaded collection. It is not a guarantee of real-world road safety.
