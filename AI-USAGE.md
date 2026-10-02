@@ -1050,3 +1050,6 @@ I then used the deployed app's signed-in browser session and the client-safe pub
 Codex ran Flutter analysis with no issues, the full suite with all 99 tests passing, and a release web build using the `/bahantabay/` base path. The build succeeded and included both Material and Cupertino icon fonts without the previous missing-font warning. A final history scan found expected generic security terms in code and documentation, zero high-confidence privileged-key/private-key pattern matches, and no `.env` commits.
 
 These checks establish the local build and the security evidence described above. The changed application and deployment configuration still need to be committed, pushed, deployed and checked on the live site before final submission.
+
+
+- **README:** [README.md](https://github.com/Allen021006/bahantabay/blob/b26abfef76b4ed7e1c31c95fee9736e71e000f95/README.md)
